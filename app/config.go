@@ -64,6 +64,7 @@ type MapObjectConfig struct {
 	TrainSignal        bool `json:"trainsignal"`
 	Minecart           bool `json:"minecart"`
 	Locator            bool `json:"locator"`
+	Symbols            bool `json:"symbols"`
 }
 
 type WebApiConfig struct {
@@ -147,6 +148,7 @@ func ParseConfig(filename string) (*Config, error) {
 		TrainSignal:        true,
 		Minecart:           false,
 		Locator:            false,
+		Symbols:            true,
 	}
 
 	mapblockaccessor := MapBlockAccessorConfig{
