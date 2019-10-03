@@ -10,7 +10,7 @@ export default AbstractGeoJsonOverlay.extend({
   },
 
   getMinDisplayedZoom: function(){
-    return 9;
+    return 10;
   },
 
   createGeoJson: function(objects){
