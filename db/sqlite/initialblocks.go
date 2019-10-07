@@ -15,8 +15,15 @@ const (
 	SETTING_PROCESSED_LEGACY_COUNT = "total_processed_legacy_count"
 )
 
-const getLastBlockQuery = `
+/*const getLastBlockQuery = `
 select pos,data,mtime
+from blocks b
+where b.pos > ?
+order by b.pos asc, b.mtime asc
+limit ?
+`*/
+const getLastBlockQuery = `
+select pos,mtime
 from blocks b
 where b.pos > ?
 order by b.pos asc, b.mtime asc
@@ -57,7 +64,7 @@ func (this *Sqlite3Accessor) FindNextInitialBlocks(s settings.Settings, layers [
 		var data []byte
 		var mtime int64
 
-		err = rows.Scan(&pos, &data, &mtime)
+		err = rows.Scan(&pos, /*&data,*/ &mtime)
 		if err != nil {
 			return nil, err
 		}
