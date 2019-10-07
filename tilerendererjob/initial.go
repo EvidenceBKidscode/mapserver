@@ -14,6 +14,7 @@ type InitialRenderEvent struct {
 
 func initialRender(ctx *app.App) {
 	logrus.Info("Starting initial rendering job")
+	clearRenderedSectors()
 
 	for true {
 		start := time.Now()

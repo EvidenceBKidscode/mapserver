@@ -13,6 +13,7 @@ type IncrementalRenderEvent struct {
 }
 
 func incrementalRender(ctx *app.App) {
+	clearRenderedSectors()
 
 	lastMtime := ctx.Settings.GetInt64(settings.SETTING_LAST_MTIME, 0)
 

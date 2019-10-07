@@ -7,11 +7,36 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+const (
+	MAP_SIZE = 65536 / 16
+)
+
+var renderedSectors map[int]bool
+
+func clearRenderedSectors() {
+	renderedSectors = nil
+}
+
+func markSectorRendered(X int, Y int) {
+	if renderedSectors == nil {
+		renderedSectors = make(map[int]bool)
+	}
+	renderedSectors[Y*MAP_SIZE+X] = true
+}
+
+func isRendered(X int, Y int) (bool) {
+	return renderedSectors[Y*MAP_SIZE+X]
+}
+
 func renderMapblocks(ctx *app.App, mblist []*mapblockparser.MapBlock) int {
 	tilecount := 0
 	totalRenderedMapblocks.Add(float64(len(mblist)))
 
 	for _, mb := range mblist {
+		if isRendered(mb.Pos.X, mb.Pos.Z) {
+			continue
+		}
+		markSectorRendered(mb.Pos.X, mb.Pos.Z)
 		tc := coords.GetTileCoordsFromMapBlock(mb.Pos, ctx.Config.Layers)
 		ctx.TileDB.MarkOutdated(tc)
 	}
