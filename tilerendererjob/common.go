@@ -11,6 +11,15 @@ const (
 	MAP_SIZE = 65536 / 16
 )
 
+/*
+Problem with ordering blocks by pos when retreiving db data, is that it scans
+map in Z order, then Y, then X. That mean that the same sector (X, Z) will be
+retreived in several queries (if tall enough). "renderedSectors" keeps track
+of already rendered sectors. A more clever solution would be to order sql query
+by X, Z, Y but it would make sql performances very bad (or imply to have X, Y, Z
+fields added).
+*/
+
 var renderedSectors map[int]bool
 
 func clearRenderedSectors() {
