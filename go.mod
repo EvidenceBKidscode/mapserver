@@ -1,6 +1,7 @@
 module mapserver
 
 require (
+	fyne.io/fyne v1.1.2
 	github.com/disintegration/imaging v1.6.1
 	github.com/gorilla/websocket v1.4.1
 	github.com/lib/pq v1.2.0

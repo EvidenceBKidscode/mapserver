@@ -11,6 +11,7 @@ type ParamsType struct {
 	Version      bool
 	Debug        bool
 	CreateConfig bool
+	NoGui        bool
 }
 
 func Parse() ParamsType {
@@ -22,6 +23,7 @@ func Parse() ParamsType {
 	flag.BoolVar(&(params.Version), "version", false, "Show version")
 	flag.BoolVar(&(params.Debug), "debug", false, "Enable debug log")
 	flag.BoolVar(&(params.CreateConfig), "createconfig", false, "Creates a config and exits")
+	flag.BoolVar(&(params.NoGui), "nogui", false, "Don't launch GUI")
 	flag.Parse()
 
 	return params

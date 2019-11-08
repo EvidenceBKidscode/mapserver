@@ -7,6 +7,7 @@ import (
 	"os"
 	"runtime"
 	"sync"
+	"path/filepath"
 )
 
 type Config struct {
@@ -77,17 +78,21 @@ type WebApiConfig struct {
 
 var lock sync.Mutex
 
-var ConfigFile string = "mapserver.json"
+var ConfigFile string
 
-func (cfg *Config) Save() error {
-	return WriteConfig(ConfigFile, cfg)
+func getConfigFileName() string {
+	if ConfigFile != "" {
+		return ConfigFile
+	} else {
+		return filepath.Join(WorldDir, "mapserver.json")
+	}
 }
 
-func WriteConfig(filename string, cfg *Config) error {
+func (cfg *Config) Save() error {
 	lock.Lock()
 	defer lock.Unlock()
 
-	f, err := os.Create(filename)
+	f, err := os.Create(getConfigFileName())
 	if err != nil {
 		return err
 	}
@@ -104,7 +109,7 @@ func WriteConfig(filename string, cfg *Config) error {
 	return nil
 }
 
-func ParseConfig(filename string) (*Config, error) {
+func ParseConfig() (*Config, error) {
 	webapi := WebApiConfig{
 		EnableMapblock: false,
 		SecretKey:      RandStringRunes(16),
@@ -183,9 +188,9 @@ func ParseConfig(filename string) (*Config, error) {
 		DefaultOverlays:        defaultoverlays,
 	}
 
-	info, err := os.Stat(filename)
+	info, err := os.Stat(getConfigFileName())
 	if info != nil && err == nil {
-		data, err := ioutil.ReadFile(filename)
+		data, err := ioutil.ReadFile(getConfigFileName())
 		if err != nil {
 			return nil, err
 		}
@@ -194,6 +199,12 @@ func ParseConfig(filename string) (*Config, error) {
 		if err != nil {
 			return nil, err
 		}
+	}
+
+	//write back config with all values
+	err = cfg.Save()
+	if err != nil {
+		panic(err)
 	}
 
 	return &cfg, nil

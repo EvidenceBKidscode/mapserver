@@ -1,15 +1,14 @@
 package main
 
 import (
-	"os"
 	"fmt"
 	"mapserver/app"
-	"mapserver/mapobject"
 	"mapserver/params"
 	"mapserver/tilerendererjob"
 	"mapserver/web"
+	"mapserver/mapobject"
 	"runtime"
-
+	"mapserver/gui"
 	"github.com/sirupsen/logrus"
 )
 
@@ -46,21 +45,21 @@ func main() {
 	}
 
 	if p.World != "" {
-		// TODO: Would it be better to use this path for all file opening ?
-		err := os.Chdir(p.World)
-		if err != nil {
-			panic(err)
-		}
+		app.WorldDir = p.World
 	}
 
+	if p.NoGui {
+		Run(p)
+	} else {
+		// gui.Run(p) would be better
+		g := gui.Gui{}
+		g.Run(p)
+	}
+}
+
+func Run(p params.ParamsType) {
 	//parse Config
-	cfg, err := app.ParseConfig(app.ConfigFile)
-	if err != nil {
-		panic(err)
-	}
-
-	//write back config with all values
-	err = cfg.Save()
+	cfg, err := app.ParseConfig()
 	if err != nil {
 		panic(err)
 	}
@@ -83,5 +82,4 @@ func main() {
 
 	//Start http server
 	web.Serve(ctx)
-
 }

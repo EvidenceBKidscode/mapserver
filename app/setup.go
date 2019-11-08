@@ -20,11 +20,14 @@ import (
 
 	"io/ioutil"
 	"os"
+	"path/filepath"
 
 	"github.com/sirupsen/logrus"
 
 	"errors"
 )
+
+var WorldDir = "."
 
 func Setup(p params.ParamsType, cfg *Config) *App {
 	a := App{}
@@ -33,14 +36,14 @@ func Setup(p params.ParamsType, cfg *Config) *App {
 	a.WebEventbus = eventbus.New()
 
 	//Parse world config
-	a.Worldconfig = worldconfig.Parse("world.mt")
+	a.Worldconfig = worldconfig.Parse(filepath.Join(WorldDir, "world.mt"))
 	logrus.WithFields(logrus.Fields{"version": Version}).Info("Starting mapserver")
 
 	var err error
 
 	switch a.Worldconfig[worldconfig.CONFIG_BACKEND] {
 	case worldconfig.BACKEND_SQLITE3:
-		a.Blockdb, err = sqlite.New("map.sqlite")
+		a.Blockdb, err = sqlite.New(filepath.Join(WorldDir, "map.sqlite"))
 		if err != nil {
 			panic(err)
 		}
@@ -100,11 +103,11 @@ func Setup(p params.ParamsType, cfg *Config) *App {
 	}
 
 	//load provided colors, if available
-	info, err := os.Stat("colors.txt")
+	info, err := os.Stat(filepath.Join(WorldDir, "colors.txt"))
 	if info != nil && err == nil {
 		logrus.WithFields(logrus.Fields{"filename": "colors.txt"}).Info("Loading colors from filesystem")
 
-		data, err := ioutil.ReadFile("colors.txt")
+		data, err := ioutil.ReadFile(filepath.Join(WorldDir, "colors.txt"))
 		if err != nil {
 			panic(err)
 		}
@@ -125,7 +128,7 @@ func Setup(p params.ParamsType, cfg *Config) *App {
 	if a.Worldconfig[worldconfig.CONFIG_PSQL_MAPSERVER] != "" {
 		a.Objectdb, err = postgresobjdb.New(a.Worldconfig[worldconfig.CONFIG_PSQL_MAPSERVER])
 	} else {
-		a.Objectdb, err = sqliteobjdb.New("mapserver.sqlite")
+		a.Objectdb, err = sqliteobjdb.New(filepath.Join(WorldDir, "mapserver.sqlite"))
 	}
 
 	if err != nil {
@@ -140,7 +143,7 @@ func Setup(p params.ParamsType, cfg *Config) *App {
 	}
 
 	//create tiledb
-	a.TileDB, err = tiledb.New("./mapserver.tiles")
+	a.TileDB, err = tiledb.New(filepath.Join(WorldDir, "mapserver.tiles"))
 
 	if err != nil {
 		panic(err)
@@ -161,7 +164,8 @@ func Setup(p params.ParamsType, cfg *Config) *App {
 	repo := make(map[string][]byte)
 
 	if a.Config.EnableMediaRepository {
-		mediasize, _ := media.ScanDir(repo, ".", []string{"mapserver.tiles", ".git"})
+		// TODO:CHECK THIS
+		mediasize, _ := media.ScanDir(repo, WorldDir, []string{"mapserver.tiles", ".git"})
 		fields := logrus.Fields{
 			"count": len(repo),
 			"bytes": mediasize,
