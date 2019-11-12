@@ -26,7 +26,7 @@ const getLastBlockQuery = `
 select pos,mtime
 from blocks b
 where b.pos > ?
-order by b.pos asc, b.mtime asc
+order by b.pos asc
 limit ?
 `
 
@@ -48,7 +48,6 @@ func (this *Sqlite3Accessor) FindNextInitialBlocks(s settings.Settings, layers [
 
 		s.SetInt64(SETTING_TOTAL_LEGACY_COUNT, int64(totallegacycount))
 	}
-
 	rows, err := this.db.Query(getLastBlockQuery, lastpos, limit)
 	if err != nil {
 		return nil, err
