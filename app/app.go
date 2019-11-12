@@ -33,4 +33,6 @@ type App struct {
 	MediaRepo map[string][]byte
 
 	WebEventbus *eventbus.Eventbus
+
+	SetStatus func(string, float64)
 }

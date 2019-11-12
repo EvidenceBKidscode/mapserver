@@ -12,7 +12,8 @@ import (
 	"mapserver/tilerendererjob"
 	"mapserver/web"
 	"mapserver/mapobject"
-//	"fmt"
+	"net/url"
+//"fmt"
 )
 
 func checkWorld(path string) bool {
@@ -34,14 +35,12 @@ type Gui struct {
 	world string
 	params params.ParamsType
 	window fyne.Window
+	status_bar *widget.ProgressBar
+	status_text *widget.Label
+	link *widget.Hyperlink
 }
 
-
 func (self *Gui) startMapServer() {
-	self.window.SetContent(widget.NewVBox(
-		widget.NewLabel("Cartographie active sur le monde \"" + self.world + "\"."),
-		widget.NewButton("Arrêter", func() { self.app.Quit() }),
-	))
 	app.WorldDir = filepath.Join(self.basedir, "..", "worlds", self.world)
 
 	//parse Config
@@ -53,6 +52,17 @@ func (self *Gui) startMapServer() {
 	//setup app context
 	ctx := app.Setup(self.params, cfg)
 
+	//TODO: Rather use event bus
+	ctx.SetStatus = func(msg string, progress float64) {
+		self.status_text.SetText(msg)
+		if progress >= 0 {
+			self.status_bar.Show()
+			self.status_bar.SetValue(progress)
+		} else {
+			self.status_bar.Hide()
+		}
+	}
+
 	//Set up mapobject events
 	mapobject.Setup(ctx)
 
@@ -61,6 +71,8 @@ func (self *Gui) startMapServer() {
 		go tilerendererjob.Job(ctx)
 	}
 
+	self.status_text.SetText("Lancement du cartographe.")
+	self.link.Show()
 	//Start http server
 	web.Serve(ctx)
 }
@@ -84,8 +96,16 @@ func (self *Gui) Run(p params.ParamsType) {
 	// Show main window
 	self.window = self.app.NewWindow("Cartographe Kidscode")
 	self.window.SetPadded(true)
+	self.status_text = widget.NewLabel("Cartographie non lancée.")
+	self.status_bar = widget.NewProgressBar()
+	self.status_bar.Hide()
+	self.link = widget.NewHyperlink("Lien du cartographe", &url.URL{Scheme: "http", Host: "localhost:8080"})
+	self.link.Hide()
+
 	self.window.SetContent(widget.NewVBox(
-		widget.NewLabel("Cartographie non lancée."),
+		self.status_text,
+		self.status_bar,
+		self.link,
 		widget.NewButton("Quitter", func() { self.app.Quit() }),
 	))
 	self.window.Show()
@@ -123,4 +143,8 @@ func (self *Gui) Run(p params.ParamsType) {
 	}
 
 	self.app.Run()
+}
+
+func (self *Gui) SetStatus(message string, progress int) {
+
 }
