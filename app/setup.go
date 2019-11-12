@@ -89,10 +89,11 @@ func Setup(p params.ParamsType, cfg *Config) *App {
 
 	colorfiles := []string{
 		//https://daconcepts.com/vanessa/hobbies/minetest/colors.txt
-		"/colors/vanessa.txt",
-		"/colors/advtrains.txt",
-		"/colors/scifi_nodes.txt",
-		"/colors/custom.txt",
+		//"/colors/vanessa.txt",
+		//"/colors/advtrains.txt",
+		//"/colors/scifi_nodes.txt",
+		//"/colors/custom.txt",
+		"/colors/kidscode.txt",
 	}
 
 	for _, colorfile := range colorfiles {
