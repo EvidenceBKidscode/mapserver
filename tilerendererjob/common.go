@@ -41,6 +41,8 @@ func renderMapblocks(ctx *app.App, mblist []*mapblockparser.MapBlock) int {
 	tilecount := 0
 	totalRenderedMapblocks.Add(float64(len(mblist)))
 
+	clearRenderedSectors()
+
 	for _, mb := range mblist {
 		if isRendered(mb.Pos.X, mb.Pos.Z) {
 			continue
