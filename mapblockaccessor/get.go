@@ -40,7 +40,10 @@ func (a *MapBlockAccessor) GetMapBlock(pos *coords.MapBlockCoords) (*mapblockpar
 		if cachedblock == nil {
 			return nil, nil
 		} else {
-			return cachedblock.(*mapblockparser.MapBlock), nil
+			mapblock := cachedblock.(*mapblockparser.MapBlock)
+			// Ensure it is parsed
+			mapblock.Parse()
+			return mapblock, nil
 		}
 	}
 
@@ -61,10 +64,15 @@ func (a *MapBlockAccessor) GetMapBlock(pos *coords.MapBlockCoords) (*mapblockpar
 		if cachedblock == nil {
 			return nil, nil
 		} else {
-			return cachedblock.(*mapblockparser.MapBlock), nil
+			mapblock := cachedblock.(*mapblockparser.MapBlock)
+			// Ensure it is parsed
+			mapblock.Parse()
+
+			return mapblock, nil
 		}
 	}
 
+	// Database fetch if not in cache
 	block, err := a.accessor.GetBlock(pos)
 	if err != nil {
 		return nil, err

@@ -127,7 +127,6 @@ func (r *MapBlockRenderer) Render(pos1, pos2 *coords.MapBlockCoords) (*image.NRG
 					if xzOccupationMap[x][z] {
 						break
 					}
-
 					nodeName := mb.GetNodeName(x, y, z)
 					param2 := mb.GetParam2(x, y, z)
 

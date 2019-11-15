@@ -6,7 +6,7 @@ import (
 	"mapserver/mapblockparser"
 	"mapserver/settings"
 
-//	cache "github.com/patrickmn/go-cache"
+	cache "github.com/patrickmn/go-cache"
 	"github.com/sirupsen/logrus"
 )
 
@@ -43,8 +43,8 @@ func (a *MapBlockAccessor) FindNextLegacyBlocks(s settings.Settings, layers []*l
 			"z": block.Pos.Z,
 		}
 		logrus.WithFields(fields).Trace("mapblock")
-/*
 		key := getKey(block.Pos)
+		/*
 
 		mapblock, err := mapblockparser.Parse(block.Data, block.Mtime, block.Pos)
 		if err != nil {
@@ -69,6 +69,10 @@ func (a *MapBlockAccessor) FindNextLegacyBlocks(s settings.Settings, layers []*l
 	mapblock.Pos = block.Pos
 	mapblock.Size = 0
 
+	mapblock.Parsed = false
+	mapblock.RawData = block.Data
+	a.blockcache.Set(key, mapblock, cache.DefaultExpiration)
+	cacheBlockCount.Inc()
 /**/
 
 		mblist = append(mblist, mapblock)

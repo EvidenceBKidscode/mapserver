@@ -22,14 +22,24 @@ where b.pos > ?
 order by b.pos asc, b.mtime asc
 limit ?
 `*/
+
 const getLastBlockQuery = `
-select pos,mtime
-from blocks b
-where b.pos > ?
-order by b.pos asc
+select b.pos, b.data, b.mtime, c.yord
+from blocks b, coords c
+where b.pos = c.pos
+and c.yord > ?
+order by c.yord asc
 limit ?
 `
-
+/*
+const getLastBlockQuery = `
+select pos, data, mtime, pos
+from blocks b
+where b.pos > ?
+order by b.pos asc, b.mtime asc
+limit ?
+`
+/**/
 func (this *Sqlite3Accessor) FindNextInitialBlocks(s settings.Settings, layers []*layer.Layer, limit int) (*db.InitialBlocksResult, error) {
 	result := &db.InitialBlocksResult{}
 
@@ -63,7 +73,7 @@ func (this *Sqlite3Accessor) FindNextInitialBlocks(s settings.Settings, layers [
 		var data []byte
 		var mtime int64
 
-		err = rows.Scan(&pos, /*&data,*/ &mtime)
+		err = rows.Scan(&pos, &data, &mtime, &lastpos)
 		if err != nil {
 			return nil, err
 		}
@@ -73,9 +83,6 @@ func (this *Sqlite3Accessor) FindNextInitialBlocks(s settings.Settings, layers [
 		}
 
 		mb := convertRows(pos, data, mtime)
-
-		// new position
-		lastpos = pos
 
 		blockcoordy := mb.Pos.Y
 		currentlayer := layer.FindLayerByY(layers, blockcoordy)
@@ -91,6 +98,7 @@ func (this *Sqlite3Accessor) FindNextInitialBlocks(s settings.Settings, layers [
 	result.List = blocks
 
 	//Save current positions of initial run
+	// TODO: Defer that, it should be set only AFTER tiles have been rendered!
 	s.SetInt64(SETTING_LAST_POS, lastpos)
 
 	return result, nil

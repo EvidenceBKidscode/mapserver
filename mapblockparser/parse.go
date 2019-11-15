@@ -12,19 +12,42 @@ func Parse(data []byte, mtime int64, pos *coords.MapBlockCoords) (*MapBlock, err
 		return nil, errors.New("no data")
 	}
 
-	timer := prometheus.NewTimer(parseDuration)
-	defer timer.ObserveDuration()
-
 	mapblock := NewMapblock()
 	mapblock.Mtime = mtime
 	mapblock.Pos = pos
+	mapblock.RawData = data
 	mapblock.Size = len(data)
+
+	err := mapblock.Parse()
+	if err != nil {
+		return nil, err
+	} else {
+		return mapblock, nil
+	}
+}
+
+func (mapblock *MapBlock)Parse() (error) {
+	if mapblock.Parsed {
+		return nil
+	}
+
+	mapblock.Size = len(mapblock.RawData)
+
+	if mapblock.Size == 0 {
+		return errors.New("no data")
+	}
+
+	timer := prometheus.NewTimer(parseDuration)
+	defer timer.ObserveDuration()
+
+
+	data := mapblock.RawData
 
 	// version
 	mapblock.Version = data[0]
 
 	if mapblock.Version < 25 || mapblock.Version > 28 {
-		return nil, errors.New("mapblock-version not supported: " + strconv.Itoa(int(mapblock.Version)))
+		return errors.New("mapblock-version not supported: " + strconv.Itoa(int(mapblock.Version)))
 	}
 
 	//flags
@@ -44,11 +67,11 @@ func Parse(data []byte, mtime int64, pos *coords.MapBlockCoords) (*MapBlock, err
 	params_width := data[offset+1]
 
 	if content_width != 2 {
-		return nil, errors.New("content_width = " + strconv.Itoa(int(content_width)))
+		return errors.New("content_width = " + strconv.Itoa(int(content_width)))
 	}
 
 	if params_width != 2 {
-		return nil, errors.New("params_width = " + strconv.Itoa(int(params_width)))
+		return errors.New("params_width = " + strconv.Itoa(int(params_width)))
 	}
 
 	//mapdata (blocks)
@@ -63,14 +86,14 @@ func Parse(data []byte, mtime int64, pos *coords.MapBlockCoords) (*MapBlock, err
 	//metadata
 	count, err := parseMapdata(mapblock, data[offset:])
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	offset += count
 
 	count, err = parseMetadata(mapblock, data[offset:])
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	offset += count
@@ -107,6 +130,9 @@ func Parse(data []byte, mtime int64, pos *coords.MapBlockCoords) (*MapBlock, err
 		mapblock.BlockMapping[nodeId] = blockName
 	}
 
+	mapblock.Parsed = true
+	mapblock.RawData = nil
 	parsedMapBlocks.Inc()
-	return mapblock, nil
+
+	return nil
 }
