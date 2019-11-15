@@ -22,6 +22,7 @@ import BorderOverlay from './overlays/BorderOverlay.js';
 import TrainOverlay from './overlays/TrainOverlay.js';
 import TrainsignalOverlay from './overlays/TrainsignalOverlay.js';
 import SymbolsOverlay from './overlays/SymbolsOverlay.js';
+import DrawOverlay from './overlays/DrawOverlay.js';
 
 export default function(cfg, map, overlays, wsChannel){
 
@@ -198,4 +199,7 @@ export default function(cfg, map, overlays, wsChannel){
       map.addLayer(overlays.Symbols);
     }
   }
+
+	overlays.Draw = new DrawOverlay();
+	map.addLayer(overlays.Draw);
 }
