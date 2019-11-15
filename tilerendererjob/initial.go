@@ -20,13 +20,13 @@ func initialRender(ctx *app.App) {
 
 		result, err := ctx.MapBlockAccessor.FindNextLegacyBlocks(ctx.Settings, ctx.Config.Layers, ctx.Config.RenderingFetchLimit)
 
-		// TODO: Use eventbus
-		// Gui feedback
-		ctx.SetStatus("Rendu initial de la carte", result.Progress)
-
 		if err != nil {
 			panic(err)
 		}
+
+		// TODO: Use eventbus
+		// Gui feedback
+		ctx.SetStatus("Rendu initial de la carte", result.Progress)
 
 		if len(result.List) == 0 && !result.HasMore {
 			ctx.Settings.SetBool(settings.SETTING_INITIAL_RUN, false)
