@@ -1,5 +1,6 @@
 .releasetoken
 mapserver
+mapserver.exe
 world.mt
 output
 test-output
