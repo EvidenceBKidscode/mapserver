@@ -9,6 +9,7 @@ import (
 	"mapserver/mapobject"
 	"runtime"
 	"mapserver/gui"
+	"path/filepath"
 	"github.com/sirupsen/logrus"
 )
 
@@ -40,14 +41,6 @@ func main() {
 		return
 	}
 
-	if p.Config != "" {
-		app.ConfigFile = p.Config
-	}
-
-	if p.World != "" {
-		app.WorldDir = p.World
-	}
-
 	if p.NoGui {
 		Run(p)
 	} else {
@@ -58,8 +51,21 @@ func main() {
 }
 
 func Run(p params.ParamsType) {
+
+	worlddir := "."
+	configfilepath := "mapserver.json"
+
+	if p.World != "" {
+		worlddir = p.World
+		configfilepath = filepath.Join(worlddir, configfilepath)
+	}
+
+	if p.Config != "" {
+		configfilepath = p.Config
+	}
+
 	//parse Config
-	cfg, err := app.ParseConfig()
+	cfg, err := app.ParseConfig(configfilepath)
 	if err != nil {
 		panic(err)
 	}
@@ -70,7 +76,7 @@ func Run(p params.ParamsType) {
 	}
 
 	//setup app context
-	ctx := app.Setup(p, cfg)
+	ctx := app.Setup(p, cfg, worlddir)
 
 	ctx.SetStatus = func(msg string, progress float64) {}
 

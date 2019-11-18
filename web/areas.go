@@ -37,7 +37,7 @@ func (h *AreasHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 		mutex.Lock()
 
 		h.lasttime = now
-		areas, err := areasparser.ParseFile(AREAS_FILENAME)
+		areas, err := areasparser.ParseFile(h.ctx.GetWorldPath(AREAS_FILENAME))
 
 		if err != nil {
 			resp.WriteHeader(500)
