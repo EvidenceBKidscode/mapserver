@@ -1,7 +1,6 @@
 package main
 
 import (
-	"os"
 	"fmt"
 	"mapserver/app"
 	"mapserver/mapobject"
@@ -9,6 +8,7 @@ import (
 	"mapserver/tilerendererjob"
 	"mapserver/web"
 	"runtime"
+	"path/filepath"
 
 	"github.com/sirupsen/logrus"
 )
@@ -41,20 +41,21 @@ func main() {
 		return
 	}
 
-	if p.Config != "" {
-		app.ConfigFile = p.Config
-	}
+	worlddir := "."
+	configfilepath := "mapserver.json"
 
 	if p.World != "" {
-		// TODO: Would it be better to use this path for all file opening ?
-		err := os.Chdir(p.World)
-		if err != nil {
-			panic(err)
-		}
+		worlddir = p.World
+		configfilepath = filepath.Join(worlddir, configfilepath)
 	}
 
+	if p.Config != "" {
+		configfilepath = p.Config
+	}
+
+
 	//parse Config
-	cfg, err := app.ParseConfig(app.ConfigFile)
+	cfg, err := app.ParseConfig(configfilepath)
 	if err != nil {
 		panic(err)
 	}
@@ -71,7 +72,7 @@ func main() {
 	}
 
 	//setup app context
-	ctx := app.Setup(p, cfg)
+	ctx := app.Setup(p, cfg, worlddir)
 
 	//Set up mapobject events
 	mapobject.Setup(ctx)

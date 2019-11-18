@@ -12,11 +12,13 @@ import (
 	"mapserver/settings"
 	"mapserver/tiledb"
 	"mapserver/tilerenderer"
+	"path/filepath"
 )
 
 type App struct {
 	Params      params.ParamsType
 	Config      *Config
+	WorldDir    string
 	Worldconfig map[string]string
 
 	Blockdb  db.DBAccessor
@@ -33,4 +35,8 @@ type App struct {
 	MediaRepo map[string][]byte
 
 	WebEventbus *eventbus.Eventbus
+}
+
+func (ctx *App) GetWorldPath(filename string) string {
+	return filepath.Join(ctx.WorldDir, filename)
 }
