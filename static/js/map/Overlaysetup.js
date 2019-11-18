@@ -23,6 +23,7 @@ import TrainOverlay from './overlays/TrainOverlay.js';
 import TrainsignalOverlay from './overlays/TrainsignalOverlay.js';
 import SymbolsOverlay from './overlays/SymbolsOverlay.js';
 import DrawOverlay from './overlays/DrawOverlay.js';
+import LocalDrawOverlay from './overlays/LocalDrawOverlay.js';
 
 export default function(cfg, map, overlays, wsChannel){
 
@@ -200,6 +201,11 @@ export default function(cfg, map, overlays, wsChannel){
     }
   }
 
+	overlays.LocalDraw = new LocalDrawOverlay();
+	map.addLayer(overlays.LocalDraw);
+
+/*
 	overlays.Draw = new DrawOverlay();
 	map.addLayer(overlays.Draw);
+*/
 }
