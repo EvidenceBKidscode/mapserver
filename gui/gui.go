@@ -41,16 +41,16 @@ type Gui struct {
 }
 
 func (self *Gui) startMapServer() {
-	app.WorldDir = filepath.Join(self.basedir, "..", "worlds", self.world)
+	worlddir := filepath.Join(self.basedir, "..", "worlds", self.world)
 
 	//parse Config
-	cfg, err := app.ParseConfig()
+	cfg, err := app.ParseConfig(filepath.Join(worlddir, "mapserver.json"))
 	if err != nil {
 		panic(err)
 	}
 
 	//setup app context
-	ctx := app.Setup(self.params, cfg)
+	ctx := app.Setup(self.params, cfg, worlddir)
 
 	//TODO: Rather use event bus
 	ctx.SetStatus = func(msg string, progress float64) {

@@ -12,6 +12,7 @@ import (
 	"mapserver/settings"
 	"mapserver/tiledb"
 	"mapserver/tilerenderer"
+	"path/filepath"
 )
 
 type App struct {
@@ -36,4 +37,8 @@ type App struct {
 	WebEventbus *eventbus.Eventbus
 
 	SetStatus func(string, float64)
+}
+
+func (ctx *App) GetWorldPath(filename string) string {
+	return filepath.Join(ctx.WorldDir, filename)
 }
