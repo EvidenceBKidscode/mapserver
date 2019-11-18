@@ -17,6 +17,7 @@ import (
 type App struct {
 	Params      params.ParamsType
 	Config      *Config
+	WorldDir    string
 	Worldconfig map[string]string
 
 	Blockdb  db.DBAccessor

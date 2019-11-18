@@ -36,11 +36,15 @@ export default L.GeoJSON.extend({
   },
 
   onDrawCreated: function(e) {
-    console.log(this instanceof L.FeatureGroup);
-    console.log(e.layer instanceof L.Layer);
     this.addLayer(e.layer);
-    console.log("added");
-    console.log("Layers so far: %d", this.getLayers().length);
+		this.jsonstring = "";
+		var json = this.toGeoJSON();
+		this.jsonstring = JSON.stringify(json);
+		m.request({
+	    method: "POST",
+	    url: "api/draw/",
+	    data: json
+	  });
   },
 
   onAdd: function(map) {

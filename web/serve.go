@@ -48,6 +48,8 @@ func Serve(ctx *app.App) {
 		mux.Handle("/api/mapblock/", &MapblockHandler{ctx: ctx})
 	}
 
+	mux.Handle("/api/draw/", &Draw{ctx: ctx})
+
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		uri := r.RequestURI
 

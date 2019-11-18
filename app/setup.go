@@ -33,6 +33,7 @@ func Setup(p params.ParamsType, cfg *Config) *App {
 	a := App{}
 	a.Params = p
 	a.Config = cfg
+	a.WorldDir = WorldDir
 	a.WebEventbus = eventbus.New()
 
 	//Parse world config
