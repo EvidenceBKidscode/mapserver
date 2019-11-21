@@ -1,5 +1,5 @@
 
-import { getConfig, getWorldInfo } from './api.js';
+import { getConfig } from './api.js';
 import routes from './routes.js';
 import wsChannel from './WebSocketChannel.js';
 import config from './config.js';
