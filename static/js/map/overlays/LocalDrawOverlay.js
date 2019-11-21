@@ -194,6 +194,7 @@ export default L.FeatureGroup.extend({
           marker: false,
           circlemarker: false,
         },
+        selected_layer: null,
       })
     } else {
       console.error("Local storage not available for LocalDraw layer.")
@@ -213,14 +214,26 @@ export default L.FeatureGroup.extend({
     return 10;
   },
 
-  style:function() {
-    this.setStyle(function(feature) {
-      return {
-          fillColor: feature.properties.fillColor,
-          color: feature.properties.strokeColor,
-        };
-      }
-    );
+  resetStyle:function(layer) {
+    layer.setStyle({color:'#00ff0080'});
+  },
+
+  selectLayer:function(layer) {
+    if (this.selected_layer != null) {
+      this.resetStyle(this.selected_layer);
+      this.selected_layer.editing.disable();
+    }
+
+    // Unselect
+    if (layer == this.selected_layer || !this.hasLayer(layer)) {
+      this.selected_layer = null;
+      return;
+    }
+
+    this.selected_layer = layer;
+    layer.editing.enable();
+    layer.bringToFront();
+    layer.setStyle({'color': 'red'});
   },
 
   save:function() {
@@ -246,8 +259,16 @@ export default L.FeatureGroup.extend({
           if (layer != null)
             overlay.addLayer(layer);
         });
-//      this.style();
     }
+  },
+
+  addLayer:function(layer) {
+    var overlay = this;
+    // Select mechanism
+    layer.on('click', function(e) {
+      overlay.selectLayer(e.target);
+    });
+    L.FeatureGroup.prototype.addLayer.call(this, layer);
   },
 
   onDrawEdited:function(e) {
