@@ -1,5 +1,5 @@
 
-import { getConfig } from './api.js';
+import { getConfig, getWorldInfo } from './api.js';
 import routes from './routes.js';
 import wsChannel from './WebSocketChannel.js';
 import config from './config.js';
@@ -10,9 +10,12 @@ import layerManager from './LayerManager.js';
 hashCompat();
 
 getConfig().then(cfg => {
-
   layerManager.setup(cfg.layers);
   config.set(cfg);
+  if (cfg.worldname) {
+    window.document.title = "Cartographie Kidscode " + cfg.worldname
+  }
+
   wsChannel.connect();
   m.route(document.getElementById("app"), "/map/0/12/0/0", routes);
 });
