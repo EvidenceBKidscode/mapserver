@@ -16,6 +16,7 @@ import (
 	"mapserver/tiledb"
 	"mapserver/tilerenderer"
 	"mapserver/worldconfig"
+	"mapserver/geometry"
 	"time"
 
 	"io/ioutil"
@@ -33,11 +34,18 @@ func Setup(p params.ParamsType, cfg *Config, worlddir string) *App {
 	a.WorldDir = worlddir
 	a.WebEventbus = eventbus.New()
 
+	var err error
+
 	//Parse world config
 	a.Worldconfig = worldconfig.Parse(a.GetWorldPath("world.mt"))
-	logrus.WithFields(logrus.Fields{"version": Version}).Info("Starting mapserver")
 
-	var err error
+	//Parse geometry data
+	a.Geometry, err = geometry.Parse(a.GetWorldPath("geometry.dat"))
+	if (err != nil) {
+		logrus.WithFields(logrus.Fields{"error": err}).Warn("No geometry data for this world")
+	}
+
+	logrus.WithFields(logrus.Fields{"version": Version}).Info("Starting mapserver")
 
 	switch a.Worldconfig[worldconfig.CONFIG_BACKEND] {
 	case worldconfig.BACKEND_SQLITE3:

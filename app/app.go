@@ -12,6 +12,8 @@ import (
 	"mapserver/settings"
 	"mapserver/tiledb"
 	"mapserver/tilerenderer"
+	"mapserver/geometry"
+
 	"path/filepath"
 )
 
@@ -20,6 +22,7 @@ type App struct {
 	Config      *Config
 	WorldDir    string
 	Worldconfig map[string]string
+	Geometry    *geometry.Geometry
 
 	Blockdb  db.DBAccessor
 	Objectdb mapobjectdb.DBAccessor
