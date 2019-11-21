@@ -37,14 +37,14 @@ export default L.GeoJSON.extend({
 
   onDrawCreated: function(e) {
     this.addLayer(e.layer);
-		this.jsonstring = "";
-		var json = this.toGeoJSON();
-		this.jsonstring = JSON.stringify(json);
-		m.request({
-	    method: "POST",
-	    url: "api/draw/",
-	    data: json
-	  });
+    this.jsonstring = "";
+    var json = this.toGeoJSON();
+    this.jsonstring = JSON.stringify(json);
+    m.request({
+      method: "POST",
+      url: "api/draw/",
+      data: json
+    });
   },
 
   onAdd: function(map) {
