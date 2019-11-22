@@ -180,49 +180,54 @@ var ColorControl = L.Control.extend({
     return this.colors[this.selectedColor];
   },
 
-	selectColor: function(name) {
-		for (let i = 0; i < this.colors.length; i++)
-			if (this.colors[i] == name) {
-				this.selectColorNumber(i);
-				return;
-			}
-	},
+  selectColor: function(name) {
+    for (let i = 0; i < this.colors.length; i++)
+      if (this.colors[i] == name) {
+        this.selectColorNumber(i);
+        return;
+      }
+  },
 
   selectColorNumber: function(number) {
     if (number < 0 || number >= this.buttons.length)
       return;
 
-    this.selectedColor = number;
     for (let i = 0; i < this.buttons.length; i++)
-      if (i == number)
-        this.buttons[i].classList.add("selected");
-      else
-        this.buttons[i].classList.remove("selected");
+      this.buttons[i].classList.remove("selected");
 
-    // Unfortunately Controls cant fire events, use a method instead
-    if (this.options.edit != null &&
-        this.options.edit.featureGroup != null &&
-        this.options.edit.featureGroup.changeColor != null)
-      this.options.edit.featureGroup.changeColor(this.getSelectedColor());
+    this.buttons[number].classList.add("selected");
+    this.selectedColor = number;
+
+    this.fire("colorselected", {
+      color: this.colors[number],
+      number: number, });
   },
 
   onAdd: function(map) {
-    var maindiv = L.DomUtil.create('div', 'leaflet-bar localdrawoverlay-bar');
+    var div = L.DomUtil.create('div', 'leaflet-bar localdrawoverlay-bar');
 
     for (let i = 0; i < this.colors.length; i++) {
-      this.buttons[i] = L.DomUtil.create('div', 'localdrawoverlay-color-box', maindiv);
+      this.buttons[i] = L.DomUtil.create('div', 'localdrawoverlay-color-box', div);
       this.buttons[i].style["background-color"] = this.colors[i];
       L.DomEvent.on(this.buttons[i], 'click',
         function(e) { this.selectColorNumber(i); }, this);
     }
     this.selectColorNumber(this.selectedColor);
-    return maindiv;
+    return div;
   },
 
   onRemove: function(map) {
   },
-
 });
+
+// Add fire capability to ColorControl
+var version = L.version.split('.');
+//If Version is >= 1.2.0
+if (parseInt(version[0], 10) === 1 && parseInt(version[1], 10) >= 2) {
+  ColorControl.include(L.Evented.prototype);
+} else {
+  ColorControl.include(L.Mixin.Events);
+}
 
 export default L.FeatureGroup.extend({
   initialize: function() {
@@ -259,13 +264,10 @@ export default L.FeatureGroup.extend({
           featureGroup: this,
         },
       });
+      this.colorControl.on("colorselected", this.colorSelected, this);
     } else {
       console.error("Local storage not available for LocalDraw layer.")
-      this.drawControl = null; /*new L.Control.Draw({
-        position: 'topleft',
-        draw: false,
-        edit: false,
-      });*/
+      this.drawControl = null;
       this.colorControl = null;
     }
   },
@@ -278,17 +280,17 @@ export default L.FeatureGroup.extend({
     return 10;
   },
 
-  changeColor:function(color) {
+  colorSelected:function(e) {
     // Change selected shape color
     if (this.selected_layer != null) {
-      this.selected_layer.attributes.color = color;
+      this.selected_layer.attributes.color = e.color;
       this.updateStyle(this.selected_layer);
     }
     // Change draw control color
     if (this.drawControl != null) {
-      this.drawControl.options.draw.polygon.shapeOptions.color = color;
-      this.drawControl.options.draw.circle.shapeOptions.color = color;
-      this.drawControl.options.draw.rectangle.shapeOptions.color = color;
+      this.drawControl.options.draw.polygon.shapeOptions.color = e.color;
+      this.drawControl.options.draw.circle.shapeOptions.color = e.color;
+      this.drawControl.options.draw.rectangle.shapeOptions.color = e.color;
     }
   },
 
@@ -328,9 +330,9 @@ export default L.FeatureGroup.extend({
     layer.editing.enable();
     layer.bringToFront();
     this.updateStyle(layer);
-		// Send selected shape color to color control
-		if (this.colorControl != null)
-			this.colorControl.selectColor(this.selected_layer.attributes.color);
+    // Send selected shape color to color control
+    if (this.colorControl != null)
+      this.colorControl.selectColor(this.selected_layer.attributes.color);
   },
 
   save:function() {
@@ -389,8 +391,8 @@ export default L.FeatureGroup.extend({
     if (layer == null) return;
     layer.attributes.color = this.colorControl.getSelectedColor();
     this.addLayer(layer);
-		// Automatically select new layer
-		this.selectLayer(layer);
+    // Automatically select new layer
+    this.selectLayer(layer);
     this.save();
   },
 
