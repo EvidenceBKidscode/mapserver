@@ -16,14 +16,14 @@ function layerToStorable(layer) {
       // Does not work with getBounds (?), have to pass this array
       Bounds:[[bounds.getNorthWest().lat, bounds.getNorthWest().lng],
         [bounds.getSouthEast().lat, bounds.getSouthEast().lng]],
-      options:layer.options,
+      attributes:layer.attributes,
     };
   }
   if (layer instanceof L.Polygon)
     return {
       type: 'polygon',
       LatLngs:layer.getLatLngs(),
-      options:layer.options,
+      attributes:layer.attributes,
     };
 
   else if (layer instanceof L.Circle)
@@ -31,7 +31,7 @@ function layerToStorable(layer) {
       type: 'circle',
       LatLngs:layer.getLatLng(),
       Radius:layer.getRadius(),
-      options:layer.options,
+      attributes:layer.attributes,
     };
 
   console.log("Error layer with unknown type could not be stored:");
@@ -39,19 +39,23 @@ function layerToStorable(layer) {
 };
 
 function storableToLayer(storable) {
+  var layer = null;
   switch (storable.type) {
     case 'rectangle':
-      return L.rectangle(storable.Bounds, storable.options);
+      layer = L.rectangle(storable.Bounds, {});
       break;
     case 'polygon':
-      return L.polygon(storable.LatLngs, storable.options);
+      layer = L.polygon(storable.LatLngs, {});
       break;
     case 'circle':
-      return L.circle(storable.LatLngs, storable.Radius, storable.options);
+      layer = L.circle(storable.LatLngs, storable.Radius, {});
       break;
     default:
-      console.log("Unknown stored layer type: "+storable.type);
+      console.log("Unknown stored layer type: " + storable.type);
+      return null;
   }
+  layer.attributes = storable.attributes;
+  return layer;
 }
 
 Object.assign(L.drawLocal, {
@@ -161,32 +165,85 @@ Object.assign(L.drawLocal, {
   },
 });
 
+var ColorControl = L.Control.extend({
+  colors: ["#ec7063", "#9b59b6", "#3498db", "#2ecc71", "#f4d03f", "#f39c12"],
+  buttons: [],
+  selectedColor: 0,
+
+  initialize: function (options) {
+    if (options) {
+      L.setOptions(this, options)
+    }
+  },
+
+  getSelectedColor: function() {
+    return this.colors[this.selectedColor];
+  },
+
+	selectColor: function(name) {
+		for (let i = 0; i < this.colors.length; i++)
+			if (this.colors[i] == name) {
+				this.selectColorNumber(i);
+				return;
+			}
+	},
+
+  selectColorNumber: function(number) {
+    if (number < 0 || number >= this.buttons.length)
+      return;
+
+    this.selectedColor = number;
+    for (let i = 0; i < this.buttons.length; i++)
+      if (i == number)
+        this.buttons[i].classList.add("selected");
+      else
+        this.buttons[i].classList.remove("selected");
+
+    // Unfortunately Controls cant fire events, use a method instead
+    if (this.options.edit != null &&
+        this.options.edit.featureGroup != null &&
+        this.options.edit.featureGroup.changeColor != null)
+      this.options.edit.featureGroup.changeColor(this.getSelectedColor());
+  },
+
+  onAdd: function(map) {
+    var maindiv = L.DomUtil.create('div', 'leaflet-bar localdrawoverlay-bar');
+
+    for (let i = 0; i < this.colors.length; i++) {
+      this.buttons[i] = L.DomUtil.create('div', 'localdrawoverlay-color-box', maindiv);
+      this.buttons[i].style["background-color"] = this.colors[i];
+      L.DomEvent.on(this.buttons[i], 'click',
+        function(e) { this.selectColorNumber(i); }, this);
+    }
+    this.selectColorNumber(this.selectedColor);
+    return maindiv;
+  },
+
+  onRemove: function(map) {
+  },
+
+});
+
 export default L.FeatureGroup.extend({
   initialize: function() {
     L.FeatureGroup.prototype.initialize.call(this);
     if (localStorageAvailable()) {
       this.drawControl = new L.Control.Draw({
         position: 'topleft',
-        edit: {
-          featureGroup: this,
-        },
         draw: {
           polygon: {
             allowIntersection: false, // Restricts shapes to simple polygons
             shapeOptions: {
-              color: '#00ff0080',
               stroke:true,
             }
           },
           circle: {
             shapeOptions: {
-              color: '#00ff0080',
               stroke:true,
             }
           },
           rectangle: {
             shapeOptions: {
-              color: '#00ff0080',
               stroke:true,
             }
           },
@@ -195,14 +252,21 @@ export default L.FeatureGroup.extend({
           circlemarker: false,
         },
         selected_layer: null,
-      })
+      });
+      this.colorControl = new ColorControl({
+        position:'topleft',
+        edit: {
+          featureGroup: this,
+        },
+      });
     } else {
       console.error("Local storage not available for LocalDraw layer.")
-      this.drawControl = new L.Control.Draw({
+      this.drawControl = null; /*new L.Control.Draw({
         position: 'topleft',
         draw: false,
         edit: false,
-      });
+      });*/
+      this.colorControl = null;
     }
   },
 
@@ -214,26 +278,59 @@ export default L.FeatureGroup.extend({
     return 10;
   },
 
-  resetStyle:function(layer) {
-    layer.setStyle({color:'#00ff0080'});
+  changeColor:function(color) {
+    // Change selected shape color
+    if (this.selected_layer != null) {
+      this.selected_layer.attributes.color = color;
+      this.updateStyle(this.selected_layer);
+    }
+    // Change draw control color
+    if (this.drawControl != null) {
+      this.drawControl.options.draw.polygon.shapeOptions.color = color;
+      this.drawControl.options.draw.circle.shapeOptions.color = color;
+      this.drawControl.options.draw.rectangle.shapeOptions.color = color;
+    }
+  },
+
+  updateStyle:function(layer) {
+    if (layer == this.selected_layer)
+      layer.setStyle({
+        color: layer.attributes.color,
+        dashArray: '10, 10',
+      });
+    else
+    layer.setStyle({
+      color: layer.attributes.color,
+      dashArray: null,
+    });
+  },
+
+  unselectLayer:function() {
+    if (this.selected_layer != null) {
+      var layer = this.selected_layer
+      this.selected_layer = null;
+      layer.editing.disable();
+      this.updateStyle(layer);
+      // TODO: Comment gerer les sauvegardes et annulations ?
+      this.save();
+    }
   },
 
   selectLayer:function(layer) {
-    if (this.selected_layer != null) {
-      this.resetStyle(this.selected_layer);
-      this.selected_layer.editing.disable();
-    }
-
     // Unselect
     if (layer == this.selected_layer || !this.hasLayer(layer)) {
-      this.selected_layer = null;
+      this.unselectLayer();
       return;
     }
 
+    this.unselectLayer();
     this.selected_layer = layer;
     layer.editing.enable();
     layer.bringToFront();
-    layer.setStyle({'color': 'red'});
+    this.updateStyle(layer);
+		// Send selected shape color to color control
+		if (this.colorControl != null)
+			this.colorControl.selectColor(this.selected_layer.attributes.color);
   },
 
   save:function() {
@@ -264,16 +361,19 @@ export default L.FeatureGroup.extend({
 
   addLayer:function(layer) {
     var overlay = this;
-    // Select mechanism
-    layer.on('click', function(e) {
-      overlay.selectLayer(e.target);
-    });
+    if (layer.attributes == null) {
+      layer.attributes = {};
+      layer.attributes.color = 'blue';
+    }
+    this.updateStyle(layer);
+
+    // Select layer on click
+    layer.on('click', function(e) { overlay.selectLayer(e.target); });
+
     L.FeatureGroup.prototype.addLayer.call(this, layer);
   },
 
   onDrawEdited:function(e) {
-    console.log("onDrawEdited");
-    console.log(e);
     var overlay = this;
     e.layers.eachLayer(function (layer) {
       overlay.addLayer(layer);
@@ -282,13 +382,15 @@ export default L.FeatureGroup.extend({
   },
 
   onDrawCreated: function(e) {
+    e.layer.attributes = {};
     var storable = layerToStorable(e.layer);
-    console.log(storable);
     if (storable == null) return;
     var layer = storableToLayer(storable);
-    console.log(layer);
     if (layer == null) return;
+    layer.attributes.color = this.colorControl.getSelectedColor();
     this.addLayer(layer);
+		// Automatically select new layer
+		this.selectLayer(layer);
     this.save();
   },
 
@@ -305,7 +407,8 @@ export default L.FeatureGroup.extend({
     map.on("draw:created", this.onDrawCreated, this);
     map.on("draw:edited", this.onDrawEdited, this);
     map.on("draw:deleted", this.onDrawDeleted, this);
-    map.addControl(this.drawControl);
+    if (this.drawControl != null) map.addControl(this.drawControl);
+    if (this.colorControl != null) map.addControl(this.colorControl);
     this.load();
   },
 
@@ -314,6 +417,7 @@ export default L.FeatureGroup.extend({
     map.off("draw:created", this.onDrawCreated, this);
     map.off("draw:edited", this.onDrawEdited, this);
     map.off("draw:deleted", this.onDrawDeleted, this);
-    map.removeControl(this.drawControl);
+    if (this.drawControl != null) map.removeControl(this.drawControl);
+    if (this.colorControl != null) map.removeControl(this.colorControl);
   },
 });

@@ -1,0 +1,16 @@
+.localdrawoverlay-color-box {
+  width: 26px;
+  height: 26px;
+  margin: 2px;
+  display: block;
+  cursor: pointer;
+	border: thick solid white;
+}
+
+.localdrawoverlay-color-box.selected {
+	border: thick solid lightgrey;
+}
+
+.localdrawoverlay-bar {
+	background: #fff;
+}
