@@ -1,16 +1,31 @@
-.localdrawoverlay-color-box {
+.localdrawoverlay-bar {
+  background: #fff;
+}
+
+.localdrawoverlay-button {
   width: 26px;
   height: 26px;
   margin: 2px;
   display: block;
   cursor: pointer;
-	border: thick solid white;
+  background-color: #fff;
 }
 
-.localdrawoverlay-color-box.selected {
-	border: thick solid lightgrey;
+.localdrawoverlay-button.disabled {
+  background-color: #ccc;
+  cursor: default;
 }
 
-.localdrawoverlay-bar {
-	background: #fff;
+.localdrawoverlay-color-button {
+  border: thick solid white;
+}
+
+.localdrawoverlay-color-button.selected {
+  border: thick solid lightgrey;
+}
+
+.localdrawoverlay-delete-button {
+  background-repeat: no-repeat;
+  background-position: center middle;
+  background-image: url('images/tool-trash.png');
 }

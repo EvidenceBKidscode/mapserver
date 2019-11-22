@@ -4,6 +4,13 @@
   custom format.
 */
 
+// STILL TO DO:
+// - Private methods
+// - Colors as options in ColorControl + better color choice
+// - Undo feature
+// - Map Key (legend)
+// - French layer name
+
 import { localStorageAvailable, getLocalObject, setLocalObject } from "../LocalStorage.js"
 
 function layerToStorable(layer) {
@@ -166,6 +173,7 @@ Object.assign(L.drawLocal, {
 });
 
 var ColorControl = L.Control.extend({
+	// TODO: Move colors to options
   colors: ["#ec7063", "#9b59b6", "#3498db", "#2ecc71", "#f4d03f", "#f39c12"],
   buttons: [],
   selectedColor: 0,
@@ -212,7 +220,8 @@ var ColorControl = L.Control.extend({
     var div = L.DomUtil.create('div', 'leaflet-bar localdrawoverlay-bar');
 
     for (let i = 0; i < this.colors.length; i++) {
-      this.buttons[i] = L.DomUtil.create('div', 'localdrawoverlay-color-box', div);
+      this.buttons[i] = L.DomUtil.create('div',
+        'localdrawoverlay-button localdrawoverlay-color-button', div);
       this.buttons[i].style["background-color"] = this.colors[i];
       L.DomEvent.on(this.buttons[i], 'click',
         function(e) { this.selectColorNumber(i); }, this);
@@ -240,6 +249,51 @@ if (parseInt(version[0], 10) === 1 && parseInt(version[1], 10) >= 2) {
 } else {
   ColorControl.include(L.Mixin.Events);
 }
+
+var DeleteControl = L.Control.extend({
+  initialize: function (options) {
+    if (options) {
+      L.setOptions(this, options)
+    }
+  },
+
+  _checkDeleteEnabled: function(layer) {
+    this.deleteEnabled = (this.options.featureGroup != null &&
+        this.options.featureGroup.getSelectedLayer() != null)
+
+    if (this.deleteEnabled)
+      this.deletebutton.classList.remove("disabled");
+    else
+      this.deletebutton.classList.add("disabled");
+  },
+
+  clickDelete: function(e) {
+    if (this.options.featureGroup != null &&
+        this.options.featureGroup.getSelectedLayer() != null) {
+      this.options.featureGroup.removeLayer(this.options.featureGroup.getSelectedLayer());
+      this.options.featureGroup.save();
+    }
+  },
+
+  onAdd: function(map) {
+    var div = L.DomUtil.create('div', 'leaflet-bar localdrawoverlay-bar');
+    this.deletebutton = L.DomUtil.create('div',
+      'localdrawoverlay-button localdrawoverlay-delete-button', div);
+
+    L.DomEvent.on(this.deletebutton, 'click', this.clickDelete, this);
+    this._checkDeleteEnabled();
+    if (this.options.featureGroup != null)
+      this.options.featureGroup.on('layerselect layerunselect',
+          this._checkDeleteEnabled, this);
+    return div;
+  },
+
+  onRemove: function(map) {
+    if (this.options.featureGroup != null)
+      this.options.featureGroup.off('layerselect layerunselect',
+          this._checkDeleteEnabled, this);
+  },
+})
 
 export default L.FeatureGroup.extend({
   initialize: function() {
@@ -276,11 +330,13 @@ export default L.FeatureGroup.extend({
           featureGroup: this,
         },
       });
+      this.deleteControl = new DeleteControl({
+        position:'topleft',
+        featureGroup: this,
+      });
       this.colorControl.on("colorselect", this.colorSelected, this);
     } else {
       console.error("Local storage not available for LocalDraw layer.")
-      this.drawControl = null;
-      this.colorControl = null;
     }
   },
 
@@ -317,6 +373,10 @@ export default L.FeatureGroup.extend({
       color: layer.attributes.color,
       dashArray: null,
     });
+  },
+
+  getSelectedLayer:function() {
+    return this.selected_layer;
   },
 
   unselectLayer:function() {
@@ -371,6 +431,12 @@ export default L.FeatureGroup.extend({
     }
   },
 
+  removeLayer:function(layer) {
+    if (layer == this.selected_layer)
+      this.unselectLayer();
+    L.FeatureGroup.prototype.removeLayer.call(this, layer);
+  },
+
   addLayer:function(layer) {
     var overlay = this;
     if (layer.attributes == null) {
@@ -421,15 +487,18 @@ export default L.FeatureGroup.extend({
     map.on("draw:deleted", this.onDrawDeleted, this);
     if (this.drawControl != null) map.addControl(this.drawControl);
     if (this.colorControl != null) map.addControl(this.colorControl);
-    this.load();
+    if (this.deleteControl != null) map.addControl(this.deleteControl);
+		this.load();
   },
 
   onRemove: function(map) {
-    this.clearLayers();
+		this.unselectLayer();
     map.off("draw:created", this.onDrawCreated, this);
     map.off("draw:edited", this.onDrawEdited, this);
     map.off("draw:deleted", this.onDrawDeleted, this);
     if (this.drawControl != null) map.removeControl(this.drawControl);
     if (this.colorControl != null) map.removeControl(this.colorControl);
+    if (this.deleteControl != null) map.removeControl(this.deleteControl);
+		this.clearLayers();
   },
 });
