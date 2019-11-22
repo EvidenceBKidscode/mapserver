@@ -169,6 +169,7 @@ var ColorControl = L.Control.extend({
   colors: ["#ec7063", "#9b59b6", "#3498db", "#2ecc71", "#f4d03f", "#f39c12"],
   buttons: [],
   selectedColor: 0,
+  edit: {},
 
   initialize: function (options) {
     if (options) {
@@ -198,9 +199,13 @@ var ColorControl = L.Control.extend({
     this.buttons[number].classList.add("selected");
     this.selectedColor = number;
 
-    this.fire("colorselected", {
+    this.fire("colorselect", {
       color: this.colors[number],
       number: number, });
+  },
+
+  layerSelected: function(layer) {
+    this.selectColor(layer.attributes.color);
   },
 
   onAdd: function(map) {
@@ -213,10 +218,17 @@ var ColorControl = L.Control.extend({
         function(e) { this.selectColorNumber(i); }, this);
     }
     this.selectColorNumber(this.selectedColor);
+
+    // Shape color -> color control
+    if (this.options.edit.featureGroup != null)
+      this.options.edit.featureGroup.on("layerselect", this.layerSelected, this);
+
     return div;
   },
 
   onRemove: function(map) {
+    if (this.options.edit.featureGroup != null)
+      this.options.edit.featureGroup.off("layerselect", this.layerSelected);
   },
 });
 
@@ -264,7 +276,7 @@ export default L.FeatureGroup.extend({
           featureGroup: this,
         },
       });
-      this.colorControl.on("colorselected", this.colorSelected, this);
+      this.colorControl.on("colorselect", this.colorSelected, this);
     } else {
       console.error("Local storage not available for LocalDraw layer.")
       this.drawControl = null;
@@ -308,14 +320,14 @@ export default L.FeatureGroup.extend({
   },
 
   unselectLayer:function() {
-    if (this.selected_layer != null) {
-      var layer = this.selected_layer
-      this.selected_layer = null;
-      layer.editing.disable();
-      this.updateStyle(layer);
-      // TODO: Comment gerer les sauvegardes et annulations ?
-      this.save();
-    }
+    if (this.selected_layer == null) return;
+    var layer = this.selected_layer;
+    this.selected_layer = null;
+    layer.editing.disable();
+    this.updateStyle(layer);
+    // TODO: Comment gerer les sauvegardes et annulations ?
+    this.save();
+    this.fire("layerunselect", layer);
   },
 
   selectLayer:function(layer) {
@@ -330,9 +342,7 @@ export default L.FeatureGroup.extend({
     layer.editing.enable();
     layer.bringToFront();
     this.updateStyle(layer);
-    // Send selected shape color to color control
-    if (this.colorControl != null)
-      this.colorControl.selectColor(this.selected_layer.attributes.color);
+    this.fire("layerselect", layer);
   },
 
   save:function() {
