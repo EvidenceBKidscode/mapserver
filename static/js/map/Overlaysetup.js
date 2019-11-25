@@ -25,7 +25,7 @@ import SymbolsOverlay from './overlays/SymbolsOverlay.js';
 import DrawOverlay from './overlays/DrawOverlay.js';
 import LocalDrawOverlay from './overlays/LocalDrawOverlay.js';
 
-export default function(cfg, map, overlays, wsChannel){
+export function OverlaySetup(cfg, map, overlays, wsChannel){
 
   function isDefault(key){
     return cfg.defaultoverlays.indexOf(key) >= 0;
@@ -194,18 +194,34 @@ export default function(cfg, map, overlays, wsChannel){
     }
   }
 
-	if (cfg.mapobjects.symbols) {
+  if (cfg.mapobjects.symbols) {
     overlays.Symbols = new SymbolsOverlay();
     if (isDefault("symbols")) {
       map.addLayer(overlays.Symbols);
     }
   }
 
-	overlays.LocalDraw = new LocalDrawOverlay();
-	map.addLayer(overlays.LocalDraw);
+  overlays.LocalDraw = new LocalDrawOverlay();
+  map.addLayer(overlays.LocalDraw);
 
 /*
-	overlays.Draw = new DrawOverlay();
-	map.addLayer(overlays.Draw);
+  overlays.Draw = new DrawOverlay();
+  map.addLayer(overlays.Draw);
 */
+}
+
+var overlayLocal = {
+  Player:"Joueurs",
+  Symbols:"Symboles",
+  LocalDraw:"Mes annotations",
+}
+
+export function GetLocalizedOverlays(overlays) {
+  var localized = {};
+  for (var overlay in overlays)
+    if (overlayLocal[overlay])
+      localized[overlayLocal[overlay]] = overlays[overlay];
+    else
+      localized[overlay] = overlays[overlay];
+  return localized;
 }

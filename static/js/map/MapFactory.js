@@ -3,12 +3,11 @@ import SimpleCRS from './SimpleCRS.js';
 import CoordinatesDisplay from './CoordinatesDisplay.js';
 import WorldInfoDisplay from './WorldInfoDisplay.js';
 import TopRightControl from './TopRightControl.js';
-import Overlaysetup from './Overlaysetup.js';
+import { OverlaySetup, GetLocalizedOverlays } from './Overlaysetup.js';
 import CustomOverlay from './CustomOverlay.js';
 import RealtimeTileLayer from './RealtimeTileLayer.js';
 
 import config from '../config.js';
-
 
 export function createMap(node, layerId, zoom, lat, lon){
 
@@ -29,15 +28,15 @@ export function createMap(node, layerId, zoom, lat, lon){
 
   //All overlays
   var overlays = {};
-  Overlaysetup(cfg, map, overlays);
+  OverlaySetup(cfg, map, overlays);
   CustomOverlay(map, overlays);
 
   new CoordinatesDisplay({ position: 'bottomleft' }).addTo(map);
   new WorldInfoDisplay(wsChannel, { position: 'bottomright' }).addTo(map);
   new TopRightControl({ position: 'topright' }).addTo(map);
 
-  //layer control
-  L.control.layers({}, overlays, { position: "topright" }).addTo(map);
+  // Layer Control
+  L.control.layers({}, GetLocalizedOverlays(overlays), { position: "topright" }).addTo(map);
 
   return map;
 }
