@@ -267,7 +267,7 @@ var DeleteControl = L.Control.extend({
       this.deletebutton.classList.add("disabled");
   },
 
-  clickDelete: function(e) {
+  _clickDelete: function(e) {
     if (this.options.featureGroup != null &&
         this.options.featureGroup.getSelectedLayer() != null) {
       this.options.featureGroup.removeLayer(this.options.featureGroup.getSelectedLayer());
@@ -280,7 +280,7 @@ var DeleteControl = L.Control.extend({
     this.deletebutton = L.DomUtil.create('div',
       'localdrawoverlay-button localdrawoverlay-delete-button', div);
 
-    L.DomEvent.on(this.deletebutton, 'click', this.clickDelete, this);
+    L.DomEvent.on(this.deletebutton, 'click', this._clickDelete, this);
     this._checkDeleteEnabled();
     if (this.options.featureGroup != null)
       this.options.featureGroup.on('layerselect layerunselect',
@@ -352,7 +352,7 @@ export default L.FeatureGroup.extend({
     // Change selected shape color
     if (this.selected_layer != null) {
       this.selected_layer.attributes.color = e.color;
-      this.updateStyle(this.selected_layer);
+      this._updateStyle(this.selected_layer);
     }
     // Change draw control color
     if (this.drawControl != null) {
@@ -362,7 +362,7 @@ export default L.FeatureGroup.extend({
     }
   },
 
-  updateStyle:function(layer) {
+  _updateStyle:function(layer) {
     if (layer == this.selected_layer)
       layer.setStyle({
         color: layer.attributes.color,
@@ -379,12 +379,12 @@ export default L.FeatureGroup.extend({
     return this.selected_layer;
   },
 
-  unselectLayer:function() {
+  _unselectLayer:function() {
     if (this.selected_layer == null) return;
     var layer = this.selected_layer;
     this.selected_layer = null;
     layer.editing.disable();
-    this.updateStyle(layer);
+    this._updateStyle(layer);
     // TODO: Comment gerer les sauvegardes et annulations ?
     this.save();
     this.fire("layerunselect", layer);
@@ -393,15 +393,15 @@ export default L.FeatureGroup.extend({
   selectLayer:function(layer) {
     // Unselect
     if (layer == this.selected_layer || !this.hasLayer(layer)) {
-      this.unselectLayer();
+      this._unselectLayer();
       return;
     }
 
-    this.unselectLayer();
+    this._unselectLayer();
     this.selected_layer = layer;
     layer.editing.enable();
     layer.bringToFront();
-    this.updateStyle(layer);
+    this._updateStyle(layer);
     this.fire("layerselect", layer);
   },
 
@@ -417,7 +417,7 @@ export default L.FeatureGroup.extend({
     }
   },
 
-  load:function() {
+  _load:function() {
     if (localStorageAvailable()) {
       this.clearLayers();
       var overlay = this
@@ -433,7 +433,7 @@ export default L.FeatureGroup.extend({
 
   removeLayer:function(layer) {
     if (layer == this.selected_layer)
-      this.unselectLayer();
+      this._unselectLayer();
     L.FeatureGroup.prototype.removeLayer.call(this, layer);
   },
 
@@ -443,7 +443,7 @@ export default L.FeatureGroup.extend({
       layer.attributes = {};
       layer.attributes.color = 'blue';
     }
-    this.updateStyle(layer);
+    this._updateStyle(layer);
 
     // Select layer on click
     layer.on('click', function(e) { overlay.selectLayer(e.target); });
@@ -488,11 +488,11 @@ export default L.FeatureGroup.extend({
     if (this.drawControl != null) map.addControl(this.drawControl);
     if (this.colorControl != null) map.addControl(this.colorControl);
     if (this.deleteControl != null) map.addControl(this.deleteControl);
-		this.load();
+		this._load();
   },
 
   onRemove: function(map) {
-		this.unselectLayer();
+		this._unselectLayer();
     map.off("draw:created", this.onDrawCreated, this);
     map.off("draw:edited", this.onDrawEdited, this);
     map.off("draw:deleted", this.onDrawDeleted, this);
