@@ -23,3 +23,37 @@ body {
   margin-left: -100px !important;
   margin-top: -100px !important;
 }
+
+/* Snapshot button */
+
+.snapshot-control {
+  box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+  background: #fff;
+  border-radius: 5px;
+  }
+
+.leaflet-touch .snapshot-control {
+  box-shadow: none;
+  border: 2px solid rgba(0,0,0,0.2);
+  background-clip: padding-box;
+  }
+
+.snapshot-button {
+  background-position: 50% 50%;
+  background-repeat: no-repeat;
+  display: block;
+  cursor: pointer;
+  background-image: url(images/tool-snapshot.png);
+  width: 36px;
+  height: 36px;
+  }
+
+.leaflet-retina .snapshot-button {
+  background-image: url(images/tool-snapshot.png);
+  background-size: 26px 26px;
+  }
+
+.leaflet-touch .snapshot-button {
+  width: 44px;
+  height: 44px;
+  }

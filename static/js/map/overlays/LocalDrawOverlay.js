@@ -5,13 +5,11 @@
 */
 
 // STILL TO DO:
-// - Private methods
 // - Colors as options in ColorControl + better color choice
 // - Undo feature
 // - Map Key (legend)
-// - French layer name
 
-import { localStorageAvailable, getLocalObject, setLocalObject } from "../LocalStorage.js"
+import { localStorageAvailable, getLocalObject, setLocalObject } from "../LocalStorage.js";
 
 function layerToStorable(layer) {
   // NOTE: Should test rectangle before polygon because rectangle IS a
@@ -173,7 +171,7 @@ Object.assign(L.drawLocal, {
 });
 
 var ColorControl = L.Control.extend({
-	// TODO: Move colors to options
+  // TODO: Move colors to options
   colors: ["#ec7063", "#9b59b6", "#3498db", "#2ecc71", "#f4d03f", "#f39c12"],
   buttons: [],
   selectedColor: 0,
@@ -488,17 +486,17 @@ export default L.FeatureGroup.extend({
     if (this.drawControl != null) map.addControl(this.drawControl);
     if (this.colorControl != null) map.addControl(this.colorControl);
     if (this.deleteControl != null) map.addControl(this.deleteControl);
-		this._load();
+    this._load();
   },
 
   onRemove: function(map) {
-		this._unselectLayer();
+    this._unselectLayer();
     map.off("draw:created", this.onDrawCreated, this);
     map.off("draw:edited", this.onDrawEdited, this);
     map.off("draw:deleted", this.onDrawDeleted, this);
     if (this.drawControl != null) map.removeControl(this.drawControl);
     if (this.colorControl != null) map.removeControl(this.colorControl);
     if (this.deleteControl != null) map.removeControl(this.deleteControl);
-		this.clearLayers();
+    this.clearLayers();
   },
 });

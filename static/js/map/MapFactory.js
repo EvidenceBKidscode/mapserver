@@ -3,6 +3,7 @@ import SimpleCRS from './SimpleCRS.js';
 import CoordinatesDisplay from './CoordinatesDisplay.js';
 import WorldInfoDisplay from './WorldInfoDisplay.js';
 import TopRightControl from './TopRightControl.js';
+import SnapShotControl from './SnapShotControl.js';
 import { OverlaySetup, GetLocalizedOverlays } from './Overlaysetup.js';
 import CustomOverlay from './CustomOverlay.js';
 import RealtimeTileLayer from './RealtimeTileLayer.js';
@@ -34,6 +35,7 @@ export function createMap(node, layerId, zoom, lat, lon){
   new CoordinatesDisplay({ position: 'bottomleft' }).addTo(map);
   new WorldInfoDisplay(wsChannel, { position: 'bottomright' }).addTo(map);
   new TopRightControl({ position: 'topright' }).addTo(map);
+  new SnapShotControl({ position: 'topright' }).addTo(map);
 
   // Layer Control
   L.control.layers({}, GetLocalizedOverlays(overlays), { position: "topright" }).addTo(map);
