@@ -172,12 +172,19 @@ Object.assign(L.drawLocal, {
 
 var ColorControl = L.Control.extend({
   // TODO: Move colors to options
-  colors: ["#ec7063", "#9b59b6", "#3498db", "#2ecc71", "#f4d03f", "#f39c12"],
+  colors: [],
+  names: [],
   buttons: [],
   selectedColor: 0,
   edit: {},
 
   initialize: function (options) {
+    var index = 0;
+    for (name in options.colors) {
+      this.colors[index] = options.colors[name];
+      this.names[index] = name;
+      index ++;
+    }
     if (options) {
       L.setOptions(this, options)
     }
@@ -327,6 +334,14 @@ export default L.FeatureGroup.extend({
         edit: {
           featureGroup: this,
         },
+        colors: {
+          "Rouge"  : "#e60000",
+          "Orange" : "#ffa612",
+          "Jaune"  : "#fff600",
+          "Vert"   : "#35fb1a",
+          "Bleu"   : "#0043ff",
+          "Violet" : "#bf00ff",
+        },
       });
       this.deleteControl = new DeleteControl({
         position:'topleft',
@@ -370,6 +385,7 @@ export default L.FeatureGroup.extend({
     layer.setStyle({
       color: layer.attributes.color,
       dashArray: null,
+      fillOpacity: 0.3,
     });
   },
 
