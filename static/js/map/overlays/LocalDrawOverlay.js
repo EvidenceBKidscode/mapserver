@@ -9,6 +9,7 @@
 // - Undo feature
 // - Map Key (legend)
 
+import "../../lib/tinycolor.js";
 import { localStorageAvailable, getLocalObject, setLocalObject } from "../LocalStorage.js";
 
 function layerToStorable(layer) {
@@ -223,6 +224,7 @@ var ColorControl = L.Control.extend({
 
   onAdd: function(map) {
     var div = L.DomUtil.create('div', 'leaflet-bar localdrawoverlay-bar');
+    L.DomEvent.disableClickPropagation(div);
 
     for (let i = 0; i < this.colors.length; i++) {
       this.buttons[i] = L.DomUtil.create('div',
@@ -234,15 +236,15 @@ var ColorControl = L.Control.extend({
     this.selectColorNumber(this.selectedColor);
 
     // Shape color -> color control
-    if (this.options.edit.featureGroup != null)
-      this.options.edit.featureGroup.on("layerselect", this.layerSelected, this);
+    if (this.options.featureGroup != null)
+      this.options.featureGroup.on("layerselect", this.layerSelected, this);
 
     return div;
   },
 
   onRemove: function(map) {
-    if (this.options.edit.featureGroup != null)
-      this.options.edit.featureGroup.off("layerselect", this.layerSelected);
+    if (this.options.featureGroup != null)
+      this.options.featureGroup.off("layerselect", this.layerSelected);
   },
 });
 
@@ -282,6 +284,7 @@ var DeleteControl = L.Control.extend({
 
   onAdd: function(map) {
     var div = L.DomUtil.create('div', 'leaflet-bar localdrawoverlay-bar');
+    L.DomEvent.disableClickPropagation(div);
     this.deletebutton = L.DomUtil.create('div',
       'localdrawoverlay-button localdrawoverlay-delete-button', div);
 
@@ -299,6 +302,161 @@ var DeleteControl = L.Control.extend({
           this._checkDeleteEnabled, this);
   },
 })
+
+// Legende
+
+var LegendControl = L.Control.extend({
+  initialize: function (options) {
+    if (options) {
+      L.setOptions(this, options)
+    }
+    this._colors = {};
+  },
+
+  _validateField: function(e) {
+    for (name in this._colors) {
+      var color = this._colors[name];
+      if (color.dom != null) {
+        L.DomUtil.removeClass(color.dom.statictext,
+          'localdrawoverlay-legend-statictext-hidden');
+        L.DomUtil.addClass(color.dom.textfield,
+          'localdrawoverlay-legend-textfield-hidden');
+        if (color.dom.textfield == e.target) {
+          color.text = color.dom.textfield.value;
+        }
+      }
+    }
+    this._save();
+    this._update();
+  },
+
+  _focusField: function(e) {
+    for (name in this._colors) {
+      var color = this._colors[name];
+      if (this._colors[name].dom) {
+        if (color.dom.entry.contains(e.target)) {
+          L.DomUtil.addClass(color.dom.statictext,
+            'localdrawoverlay-legend-statictext-hidden');
+          L.DomUtil.removeClass(color.dom.textfield,
+            'localdrawoverlay-legend-textfield-hidden');
+          if (color.text != null)
+            color.dom.textfield.value = color.text;
+          color.dom.textfield.focus();
+        } else {
+          L.DomUtil.removeClass(color.dom.statictext,
+            'localdrawoverlay-legend-statictext-hidden');
+          L.DomUtil.addClass(color.dom.textfield,
+            'localdrawoverlay-legend-textfield-hidden');
+        }
+      }
+    }
+  },
+
+  _save: function() {
+    if (localStorageAvailable()) {
+      var storage = {};
+      for (name in this._colors)
+        if (this._colors[name].text != null)
+          storage[name] = this._colors[name].text;
+      setLocalObject("mylegend", JSON.stringify(storage));
+    }
+  },
+
+  _load:function() {
+    if (localStorageAvailable()) {
+      var storage = JSON.parse(getLocalObject("mylegend"));
+      for (name in storage) {
+        if (this._colors[name] == null)
+          this._colors[name] = {
+            tiny:tinycolor(name),
+          };
+        this._colors[name].text = storage[name];
+      }
+    }
+  },
+
+  _update: function() {
+    if (! this.options.featureGroup instanceof L.FeatureGroup)
+      return;
+
+    // Reset color visibility
+    for (name in this._colors)
+      this._colors[name].visible = false;
+
+    // Make visible colors realy in use
+    this.options.featureGroup.eachLayer(function(layer) {
+      if (this._colors[layer.attributes.color] == null)
+        this._colors[layer.attributes.color] = {
+          tiny:tinycolor(layer.attributes.color)
+        };
+      this._colors[layer.attributes.color].visible = true;
+    }, this);
+
+    for (name in this._colors) {
+      var color = this._colors[name];
+
+      // Add missing dom elements for new colors
+      if (color.dom == null) {
+        color.dom = {}
+        color.dom.entry = L.DomUtil.create('div',
+          'localdrawoverlay-legend-entry', this._div);
+
+        var sample = L.DomUtil.create('div',
+           'localdrawoverlay-legend-color', color.dom.entry);
+        sample.style["background-color"] = color.tiny.setAlpha(0.3).toHex8String();
+        sample.style["borderColor"] = color.tiny.setAlpha(1.0).toHex8String();
+
+        color.dom.statictext = L.DomUtil.create('div',
+          'localdrawoverlay-legend-statictext', color.dom.entry);
+
+        color.dom.textfield = L.DomUtil.create('input',
+          'localdrawoverlay-legend-textfield localdrawoverlay-legend-textfield-hidden',
+          color.dom.entry);
+        color.dom.textfield.type = "text";
+        L.DomEvent.on(color.dom.entry, 'click', this._focusField, this);
+        L.DomEvent.on(color.dom.textfield, 'blur', this._validateField, this);
+      };
+
+      // Set text
+      if (color.text == null || color.text == "")
+        color.dom.statictext.innerHTML = "<span class='empty'>Ajouter du texte</span>";
+      else
+        color.dom.statictext.innerHTML = color.text;
+
+      // Show/hide wanted lines
+      if (color.visible)
+        color.dom.entry.style["display"] = "block";
+      else
+        color.dom.entry.style["display"] = "none";
+    }
+  },
+
+
+  onAdd: function(map) {
+    this._div = L.DomUtil.create('div', 'localdrawoverlay-legend-box');
+    L.DomEvent.disableClickPropagation(this._div);
+    this._load();
+    this._update();
+
+    if (this.options.featureGroup instanceof L.FeatureGroup) {
+      this.options.featureGroup.on("layeradd", this._update, this);
+      this.options.featureGroup.on("layerchange", this._update, this);
+      this.options.featureGroup.on("layerremove", this._update, this);
+    }
+
+    return this._div;
+  },
+
+  onRemove: function(map) {
+    if (this.options.featureGroup instanceof L.FeatureGroup) {
+      this.options.featureGroup.off("layeradd", this._update, this);
+      this.options.featureGroup.on("layerchange", this._update, this);
+      this.options.featureGroup.off("layerremove", this._update, this);
+    }
+  },
+});
+
+////////////////////////////////////////////////////////////////////////////////
 
 export default L.FeatureGroup.extend({
   initialize: function() {
@@ -329,11 +487,10 @@ export default L.FeatureGroup.extend({
         },
         selected_layer: null,
       });
+
       this.colorControl = new ColorControl({
         position:'topleft',
-        edit: {
-          featureGroup: this,
-        },
+        featureGroup: this,
         colors: {
           "Rouge"  : "#e60000",
           "Orange" : "#ffa612",
@@ -343,11 +500,18 @@ export default L.FeatureGroup.extend({
           "Violet" : "#bf00ff",
         },
       });
+      this.colorControl.on("colorselect", this.colorSelected, this);
+
       this.deleteControl = new DeleteControl({
         position:'topleft',
         featureGroup: this,
       });
-      this.colorControl.on("colorselect", this.colorSelected, this);
+
+      this.legendControl = new LegendControl({
+        position:'bottomright',
+        featureGroup: this,
+      });
+
     } else {
       console.error("Local storage not available for LocalDraw layer.")
     }
@@ -364,8 +528,11 @@ export default L.FeatureGroup.extend({
   colorSelected:function(e) {
     // Change selected shape color
     if (this.selected_layer != null) {
-      this.selected_layer.attributes.color = e.color;
-      this._updateStyle(this.selected_layer);
+      if (this.selected_layer.attributes.color != e.color) {
+        this.selected_layer.attributes.color = e.color;
+        this._updateStyle(this.selected_layer);
+        this.fire("layerchange", this.selected_layer);
+      }
     }
     // Change draw control color
     if (this.drawControl != null) {
@@ -427,7 +594,7 @@ export default L.FeatureGroup.extend({
         if (storable != null)
           storage.push(storable);
       });
-      setLocalObject("test", JSON.stringify(storage));
+      setLocalObject("mydraw", JSON.stringify(storage));
     }
   },
 
@@ -435,7 +602,7 @@ export default L.FeatureGroup.extend({
     if (localStorageAvailable()) {
       this.clearLayers();
       var overlay = this
-      var storage = JSON.parse(getLocalObject("test"));
+      var storage = JSON.parse(getLocalObject("mydraw"));
       if (storage != null)
         storage.forEach(function(storable) {
           var layer = storableToLayer(storable);
@@ -502,6 +669,7 @@ export default L.FeatureGroup.extend({
     if (this.drawControl != null) map.addControl(this.drawControl);
     if (this.colorControl != null) map.addControl(this.colorControl);
     if (this.deleteControl != null) map.addControl(this.deleteControl);
+    if (this.legendControl != null) map.addControl(this.legendControl);
     this._load();
   },
 
@@ -513,6 +681,8 @@ export default L.FeatureGroup.extend({
     if (this.drawControl != null) map.removeControl(this.drawControl);
     if (this.colorControl != null) map.removeControl(this.colorControl);
     if (this.deleteControl != null) map.removeControl(this.deleteControl);
+    if (this.legendControl != null) map.removeControl(this.legendControl);
+
     this.clearLayers();
   },
 });
