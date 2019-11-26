@@ -19,6 +19,10 @@ body {
   padding: 5px;
 }
 
+.leaflet-container {
+	background: inherit;
+}
+
 .mapserver-label-icon {
   margin-left: -100px !important;
   margin-top: -100px !important;
