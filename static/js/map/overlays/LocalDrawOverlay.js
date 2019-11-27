@@ -433,7 +433,8 @@ var LegendControl = L.Control.extend({
 
 
   onAdd: function(map) {
-    this._div = L.DomUtil.create('div', 'localdrawoverlay-legend-box');
+    if (this._div == null)
+      this._div = L.DomUtil.create('div', 'localdrawoverlay-legend-box');
     L.DomEvent.disableClickPropagation(this._div);
     this._load();
     this._update();
@@ -443,14 +444,13 @@ var LegendControl = L.Control.extend({
       this.options.featureGroup.on("layerchange", this._update, this);
       this.options.featureGroup.on("layerremove", this._update, this);
     }
-
     return this._div;
   },
 
   onRemove: function(map) {
     if (this.options.featureGroup instanceof L.FeatureGroup) {
       this.options.featureGroup.off("layeradd", this._update, this);
-      this.options.featureGroup.on("layerchange", this._update, this);
+      this.options.featureGroup.off("layerchange", this._update, this);
       this.options.featureGroup.off("layerremove", this._update, this);
     }
   },
@@ -666,7 +666,7 @@ export default L.FeatureGroup.extend({
     map.on("draw:created", this.onDrawCreated, this);
     map.on("draw:edited", this.onDrawEdited, this);
     map.on("draw:deleted", this.onDrawDeleted, this);
-		map.on("click", this._unselectLayer, this);
+    map.on("click", this._unselectLayer, this);
 
     if (this.drawControl != null) map.addControl(this.drawControl);
     if (this.colorControl != null) map.addControl(this.colorControl);
