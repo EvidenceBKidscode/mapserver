@@ -48,13 +48,13 @@ function storableToLayer(storable) {
   var layer = null;
   switch (storable.type) {
     case 'rectangle':
-      layer = L.rectangle(storable.Bounds, {});
+      layer = L.rectangle(storable.Bounds, { bubblingMouseEvents:false, });
       break;
     case 'polygon':
-      layer = L.polygon(storable.LatLngs, {});
+      layer = L.polygon(storable.LatLngs, { bubblingMouseEvents:false, });
       break;
     case 'circle':
-      layer = L.circle(storable.LatLngs, storable.Radius, {});
+      layer = L.circle(storable.LatLngs, storable.Radius, { bubblingMouseEvents:false, });
       break;
     default:
       console.log("Unknown stored layer type: " + storable.type);
@@ -666,6 +666,8 @@ export default L.FeatureGroup.extend({
     map.on("draw:created", this.onDrawCreated, this);
     map.on("draw:edited", this.onDrawEdited, this);
     map.on("draw:deleted", this.onDrawDeleted, this);
+		map.on("click", this._unselectLayer, this);
+
     if (this.drawControl != null) map.addControl(this.drawControl);
     if (this.colorControl != null) map.addControl(this.colorControl);
     if (this.deleteControl != null) map.addControl(this.deleteControl);
