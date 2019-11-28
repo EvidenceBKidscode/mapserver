@@ -28,6 +28,7 @@ func Serve(ctx *app.App) {
 	mux.Handle("/api/media/", &MediaHandler{ctx: ctx})
 	mux.Handle("/api/minetest", &Minetest{ctx: ctx})
 	mux.Handle("/api/mapobjects/", &MapObjects{ctx: ctx})
+	mux.Handle("/api/rastermaps/", &RasterMaps{ctx: ctx})
 
 	if ctx.Config.MapObjects.Areas {
 		mux.Handle("/api/areas", &AreasHandler{ctx: ctx})

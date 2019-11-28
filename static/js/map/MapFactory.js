@@ -29,6 +29,13 @@ export function createMap(node, layerId, zoom, lat, lon){
 
   //All overlays
   var overlays = {};
+	overlays.Top25 = new L.ImageOverlay(
+		"http://localhost:8080/api/rastermaps/ign_scan25.png",
+		[[-2560, -2560], [2560, 2560]], {opacity: 0.5});
+	overlays.Arien = new L.ImageOverlay(
+		"http://localhost:8080/api/rastermaps/ign_ortho.png",
+		[[-2560, -2560], [2560, 2560]], {opacity: 0.5});
+
   OverlaySetup(cfg, map, overlays);
   CustomOverlay(map, overlays);
 
