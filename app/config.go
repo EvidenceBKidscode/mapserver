@@ -163,7 +163,7 @@ func ParseConfig(configfilepath string) (*Config, error) {
 		Port:                   8080,
 		EnableRendering:        true,
 		EnablePrometheus:       true,
-		EnableSearch:           true,
+		EnableSearch:           false,
 		EnableInitialRendering: true,
 		EnableTransparency:     false,
 		EnableMediaRepository:  false,
