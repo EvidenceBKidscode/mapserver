@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 	"os"
-	"path"
+	"path/filepath"
 	"io"
 )
 
@@ -17,26 +17,34 @@ func (h *RasterMaps) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 	str := strings.TrimPrefix(req.URL.Path, "/api/rastermaps/")
 	parts := strings.Split(str, "/")
 	if len(parts) != 1 {
-		resp.WriteHeader(500)
-		resp.Write([]byte("wrong number of arguments"))
+		resp.WriteHeader(404)
 		return
 	}
 
-	filename := parts[0]
-	file, err := os.Open(path.Join(h.ctx.WorldDir, "worldmods", "minimap", "textures", filename))
+	file, err := os.Open(filepath.Join(h.ctx.WorldDir, "worldmods", "minimap",
+			"textures", parts[0]))
 	if err != nil {
 		resp.WriteHeader(404)
-		resp.Write([]byte("Not found"))
-		resp.Write([]byte(filename))
+		resp.Write([]byte(parts[0]))
 		return
 	}
-
 	defer file.Close()
+
 	resp.Header().Set("Content-Type", "image/png")
-	_, err = io.Copy(resp, file);
-	if err != nil {
-		resp.WriteHeader(500)
-		resp.Write([]byte("error while sending data"))
-		return
+
+	// Unfortunately on windows (or some windows?) using io.Copy leads to a "not
+	// implemented" error
+	buf := make([]byte, 16384)
+
+	for {
+		n, err := file.Read(buf)
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			resp.WriteHeader(500)
+			return
+		}
+		resp.Write(buf[:n])
 	}
 }
