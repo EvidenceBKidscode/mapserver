@@ -1,0 +1,30 @@
+# Javascript libraries added for Kidscode version:
+
+## leaflet.draw
+https://github.com/Leaflet/Leaflet.draw
+Author: Jacob Toye and others
+License: MIT
+
+Purpose: Add interactive draw layer.
+
+## L.Control.Opacity
+https://github.com/dayjournal/Leaflet.Control.Opacity
+Author: Yasunori Kirimoto
+License: MIT
+
+Purpose: Add sliders allowing to change layers opacity
+
+
+## tinycolor
+https://github.com/bgrins/TinyColor
+Author: Brian Grinstead
+License: MIT
+
+Purpose: Manage colors
+
+## html2canvas
+https://github.com/niklasvh/html2canvas
+Author: Niklas von Hertzen
+License: MIT
+
+Purpose: Take snapshots of the map
