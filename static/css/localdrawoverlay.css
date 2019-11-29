@@ -3,28 +3,32 @@
 }
 
 .localdrawoverlay-button {
-  width: 26px;
-  height: 26px;
-  margin: 2px;
-  display: block;
-  cursor: pointer;
-  background-color: #fff;
+  display: flex !important;
+  justify-content: center;
 }
 
 .localdrawoverlay-button.disabled {
   background-color: #ccc;
   cursor: default;
 }
-
-.localdrawoverlay-color-button {
-  border: thick solid white;
+.localdrawoverlay-button.disabled:hover {
+  background-color: #ccc;
 }
 
-.localdrawoverlay-color-button.selected {
-  border: thick solid lightgrey;
+.localdrawoverlay-color-button {
+  align-self: center;
+  border: 2px solid white;
+  width: 20px;
+  height: 20px;
+}
+
+.selected .localdrawoverlay-color-button {
+  border-color:black;
 }
 
 .localdrawoverlay-delete-button {
+  width: 30px;
+  height: 30px;
   background-repeat: no-repeat;
   background-position: center middle;
   background-image: url('images/tool-trash.png');

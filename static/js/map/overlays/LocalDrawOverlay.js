@@ -173,17 +173,17 @@ Object.assign(L.drawLocal, {
 
 var ColorControl = L.Control.extend({
   // TODO: Move colors to options
-  colors: [],
-  names: [],
-  buttons: [],
-  selectedColor: 0,
+  _colors: [],
+  _names: [],
+  _buttons: [],
+  _selectedColor: 0,
   edit: {},
 
   initialize: function (options) {
     var index = 0;
     for (name in options.colors) {
-      this.colors[index] = options.colors[name];
-      this.names[index] = name;
+      this._colors[index] = options.colors[name];
+      this._names[index] = name;
       index ++;
     }
     if (options) {
@@ -192,48 +192,60 @@ var ColorControl = L.Control.extend({
   },
 
   getSelectedColor: function() {
-    return this.colors[this.selectedColor];
+    return this._colors[this._selectedColor];
   },
 
   selectColor: function(name) {
-    for (let i = 0; i < this.colors.length; i++)
-      if (this.colors[i] == name) {
+    for (let i = 0; i < this._colors.length; i++)
+      if (this._colors[i] == name) {
         this.selectColorNumber(i);
         return;
       }
   },
 
   selectColorNumber: function(number) {
-    if (number < 0 || number >= this.buttons.length)
+    if (number < 0 || number >= this._buttons.length)
       return;
 
-    for (let i = 0; i < this.buttons.length; i++)
-      this.buttons[i].classList.remove("selected");
+    for (let i = 0; i < this._buttons.length; i++)
+      this._buttons[i].classList.remove("selected");
 
-    this.buttons[number].classList.add("selected");
-    this.selectedColor = number;
+    this._buttons[number].classList.add("selected");
+    this._selectedColor = number;
 
-    this.fire("colorselect", {
-      color: this.colors[number],
-      number: number, });
+    this.fire("colorselect", { color: this._colors[number], number: number, });
   },
 
   layerSelected: function(layer) {
     this.selectColor(layer.attributes.color);
   },
 
+  _createButton: function(title, bgcolor, container, fn) {
+    var link = L.DomUtil.create('a',
+      'localdrawoverlay-button', container);
+    link.href = '#';
+    link.title = title;
+
+    link.setAttribute('role', 'button');
+    link.setAttribute('aria-label', title);
+    var div = L.DomUtil.create('div', 'localdrawoverlay-color-button', link);
+    div.style["background-color"] = bgcolor;
+    L.DomEvent.disableClickPropagation(link);
+    L.DomEvent.on(link, 'click', L.DomEvent.stop);
+    L.DomEvent.on(link, 'click', fn, this);
+    L.DomEvent.on(link, 'click', this._refocusOnMap, this);
+    return link;
+  },
+
   onAdd: function(map) {
-    var div = L.DomUtil.create('div', 'leaflet-bar localdrawoverlay-bar');
+    var div = L.DomUtil.create('div', 'localdrawoverlay-bar leaflet-bar');
     L.DomEvent.disableClickPropagation(div);
 
-    for (let i = 0; i < this.colors.length; i++) {
-      this.buttons[i] = L.DomUtil.create('div',
-        'localdrawoverlay-button localdrawoverlay-color-button', div);
-      this.buttons[i].style["background-color"] = this.colors[i];
-      L.DomEvent.on(this.buttons[i], 'click',
-        function(e) { this.selectColorNumber(i); }, this);
+    for (let i = 0; i < this._colors.length; i++) {
+      this._buttons[i] = this._createButton(this._names[i], this._colors[i], div,
+        function(e) { this.selectColorNumber(i); });
     }
-    this.selectColorNumber(this.selectedColor);
+    this.selectColorNumber(this._selectedColor);
 
     // Shape color -> color control
     if (this.options.featureGroup != null)
@@ -245,6 +257,12 @@ var ColorControl = L.Control.extend({
   onRemove: function(map) {
     if (this.options.featureGroup != null)
       this.options.featureGroup.off("layerselect", this.layerSelected);
+
+    for (let i = 0; i < this._buttons.length; i++) {
+      L.DomEvent.off(this._buttons[i], 'click', DomEvent.stop);
+      L.DomEvent.off(this._buttons[i], 'click', fn);
+      L.DomEvent.off(this._buttons[i], 'click', this._refocusOnMap);
+    }
   },
 });
 
@@ -265,13 +283,16 @@ var DeleteControl = L.Control.extend({
   },
 
   _checkDeleteEnabled: function(layer) {
-    this.deleteEnabled = (this.options.featureGroup != null &&
+    this._deleteEnabled = (this.options.featureGroup != null &&
         this.options.featureGroup.getSelectedLayer() != null)
 
-    if (this.deleteEnabled)
-      this.deletebutton.classList.remove("disabled");
-    else
-      this.deletebutton.classList.add("disabled");
+    if (this._deleteEnabled) {
+      this._deletebutton.classList.remove("disabled");
+      this._deletebutton.title = "Supprimer la forme sélectionnée";
+    } else {
+      this._deletebutton.classList.add("disabled");
+      this._deletebutton.title = "Pas de forme sélectionnée";
+    }
   },
 
   _clickDelete: function(e) {
@@ -285,14 +306,22 @@ var DeleteControl = L.Control.extend({
   onAdd: function(map) {
     var div = L.DomUtil.create('div', 'leaflet-bar localdrawoverlay-bar');
     L.DomEvent.disableClickPropagation(div);
-    this.deletebutton = L.DomUtil.create('div',
-      'localdrawoverlay-button localdrawoverlay-delete-button', div);
 
-    L.DomEvent.on(this.deletebutton, 'click', this._clickDelete, this);
+    var link = L.DomUtil.create('a',
+      'localdrawoverlay-button localdrawoverlay-delete-button', div);
+    link.href = '#';
+    link.setAttribute('role', 'button');
+    link.setAttribute('aria-label', link.title);
+    L.DomEvent.disableClickPropagation(link);
+    L.DomEvent.on(link, 'click', L.DomEvent.stop);
+    L.DomEvent.on(link, 'click', this._clickDelete, this);
+    L.DomEvent.on(link, 'click', this._refocusOnMap, this);
+    this._deletebutton = link;
     this._checkDeleteEnabled();
     if (this.options.featureGroup != null)
       this.options.featureGroup.on('layerselect layerunselect',
           this._checkDeleteEnabled, this);
+
     return div;
   },
 
@@ -300,6 +329,9 @@ var DeleteControl = L.Control.extend({
     if (this.options.featureGroup != null)
       this.options.featureGroup.off('layerselect layerunselect',
           this._checkDeleteEnabled, this);
+        L.DomEvent.off(this._deletebutton, 'click', L.DomEvent.stop);
+        L.DomEvent.off(this._deletebutton, 'click', this._clickDelete);
+        L.DomEvent.off(this._deletebutton, 'click', this._refocusOnMap);
   },
 })
 
@@ -436,7 +468,6 @@ var LegendControl = L.Control.extend({
         color.dom.entry.style["display"] = "none";
     }
   },
-
 
   onAdd: function(map) {
     if (this._div == null)
