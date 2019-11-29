@@ -13,7 +13,8 @@ var PlayerIcon = L.icon({
 
   iconSize:     [16, 32],
   iconAnchor:   [8, 16],
-  popupAnchor:  [0, -16]
+  popupAnchor:  [0, -16],
+  className: 'mapserver-object-player'
 });
 
 export default L.LayerGroup.extend({

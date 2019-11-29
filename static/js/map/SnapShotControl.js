@@ -13,7 +13,14 @@ export default L.Control.extend({
     var me = this;
     html2canvas(document.body, {
       ignoreElements: function(element) {
-        return (element.className == "leaflet-control-container");
+        return (
+          // Remove all controls
+          (element.classList.contains('leaflet-control') &&
+          // Except legend
+            !element.classList.contains("localdrawoverlay-legend-box"))
+          // Remove also players
+          || element.classList.contains('mapserver-object-player')
+        );
       },
     }).then(function(canvas) {
       me._ongoingsnap = false;
