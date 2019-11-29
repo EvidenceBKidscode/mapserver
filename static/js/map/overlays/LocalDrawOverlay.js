@@ -308,9 +308,14 @@ var DeleteControl = L.Control.extend({
 var LegendControl = L.Control.extend({
   initialize: function (options) {
     if (options) {
-      L.setOptions(this, options)
+      L.setOptions(this, options);
     }
     this._colors = {};
+  },
+
+  _keypressedField: function(e) {
+    if (e.code == "Enter" || e.code == "Escape")
+      this._validateField(e);
   },
 
   _validateField: function(e) {
@@ -415,6 +420,7 @@ var LegendControl = L.Control.extend({
         color.dom.textfield.type = "text";
         L.DomEvent.on(color.dom.entry, 'click', this._focusField, this);
         L.DomEvent.on(color.dom.textfield, 'blur', this._validateField, this);
+        L.DomEvent.on(color.dom.textfield, 'keydown', this._keypressedField, this);
       };
 
       // Set text
