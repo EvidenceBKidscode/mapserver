@@ -32,11 +32,18 @@ function layerToStorable(layer) {
       attributes:layer.attributes,
     };
 
-  else if (layer instanceof L.Circle)
+  if (layer instanceof L.Circle)
     return {
       type: 'circle',
       LatLngs:layer.getLatLng(),
       Radius:layer.getRadius(),
+      attributes:layer.attributes,
+    };
+
+  if (layer instanceof L.Marker)
+    return  {
+      type: 'marker',
+      LatLng:layer.getLatLng(),
       attributes:layer.attributes,
     };
 
@@ -56,11 +63,21 @@ function storableToLayer(storable) {
     case 'circle':
       layer = L.circle(storable.LatLngs, storable.Radius, { bubblingMouseEvents:false, });
       break;
+    case 'marker':
+      layer = L.marker(storable.LatLng, { bubblingMouseEvents:false, });
+      break;
     default:
       console.log("Unknown stored layer type: " + storable.type);
       return null;
   }
-  layer.attributes = storable.attributes;
+  if (storable.attributes == null) {
+      if (layer instanceof L.path)
+        layer.attributes = { color: '#fff' };
+      if (layer instanceof L.marker)
+        layer.attributes = { markerType: 'unknown' };
+  } else {
+    layer.attributes = storable.attributes;
+  }
   return layer;
 }
 
@@ -84,7 +101,7 @@ Object.assign(L.drawLocal, {
         polygon: 'Dessiner un polygone',
         rectangle: 'Dessiner un rectangle',
         circle: 'Dessiner un cercle',
-        marker: 'Dessiner un marqueur',
+        marker: 'Dessiner du texte',
         circlemarker: 'Dessiner un marqueur-cercle'
       }
     },
@@ -102,7 +119,8 @@ Object.assign(L.drawLocal, {
       },
       marker: {
         tooltip: {
-          start: 'Cliquer sur la carte pour placer un marqueur.'
+          start: 'Cliquer sur la carte pour ajouter du texte.'
+         //start: 'Cliquer sur la carte pour placer un marqueur.'
         }
       },
       polygon: {
@@ -422,11 +440,14 @@ var LegendControl = L.Control.extend({
 
     // Make visible colors realy in use
     this.options.featureGroup.eachLayer(function(layer) {
-      if (this._colors[layer.attributes.color] == null)
-        this._colors[layer.attributes.color] = {
-          tiny:tinycolor(layer.attributes.color)
-        };
-      this._colors[layer.attributes.color].visible = true;
+      // Only path color, not markers
+      if (layer instanceof L.Path) {
+        if (this._colors[layer.attributes.color] == null)
+          this._colors[layer.attributes.color] = {
+            tiny:tinycolor(layer.attributes.color)
+          };
+        this._colors[layer.attributes.color].visible = true;
+      }
     }, this);
 
     for (name in this._colors) {
@@ -493,6 +514,41 @@ var LegendControl = L.Control.extend({
   },
 });
 
+/* Taken from a newer version of leafletjs */
+
+var DivIcon = L.Icon.extend({
+  options: {
+    iconSize: null,
+    html: false,
+    bgPos: null,
+    className: 'leaflet-div-icon',
+  },
+
+  createIcon: function (oldIcon) {
+    var div = (oldIcon && oldIcon.tagName === 'DIV') ? oldIcon : document.createElement('div'),
+        options = this.options;
+
+    if (options.html instanceof Element) {
+      L.DomUtil.empty(div);
+      div.appendChild(options.html);
+    } else {
+      div.innerHTML = options.html !== false ? options.html : '';
+    }
+
+    if (options.bgPos) {
+      var bgPos = point(options.bgPos);
+      div.style.backgroundPosition = (-bgPos.x) + 'px ' + (-bgPos.y) + 'px';
+    }
+    this._setIconStyles(div, 'icon');
+
+    return div;
+  },
+
+  createShadow: function () {
+    return null;
+  }
+});
+
 ////////////////////////////////////////////////////////////////////////////////
 
 export default L.FeatureGroup.extend({
@@ -519,10 +575,17 @@ export default L.FeatureGroup.extend({
             }
           },
           polyline: false,
-          marker: false,
+          marker: {
+            icon: new L.Icon({
+              iconUrl: 'pics/marker-text.png',
+              iconSize: [24, 24],
+               iconAnchor: [24, 24],
+            }),
+          },
           circlemarker: false,
         },
-        selected_layer: null,
+        _selected_layer: null,
+        _edited_layer: null,
       });
 
       this.colorControl = new ColorControl({
@@ -564,12 +627,12 @@ export default L.FeatureGroup.extend({
 
   colorSelected:function(e) {
     // Change selected shape color
-    if (this.selected_layer != null) {
-      if (this.selected_layer.attributes.color != e.color) {
-        this.selected_layer.attributes.color = e.color;
-        this._updateStyle(this.selected_layer);
-        this.fire("layerchange", this.selected_layer);
-      }
+    if (this._selected_layer != null &&
+        this._selected_layer instanceof L.Path &&
+        this._selected_layer.attributes.color != e.color) {
+      this._selected_layer.attributes.color = e.color;
+      this._updateStyle(this._selected_layer);
+      this.fire("layerchange", this._selected_layer);
     }
     // Change draw control color
     if (this.drawControl != null) {
@@ -580,47 +643,123 @@ export default L.FeatureGroup.extend({
   },
 
   _updateStyle:function(layer) {
-    if (layer == this.selected_layer)
-      layer.setStyle({
-        color: layer.attributes.color,
-        dashArray: '10, 10',
-      });
-    else
-    layer.setStyle({
-      color: layer.attributes.color,
-      dashArray: null,
-      fillOpacity: 0.3,
-    });
+    if (layer instanceof L.Path) {
+      if (layer == this._selected_layer)
+        layer.setStyle({
+          color: layer.attributes.color,
+          dashArray: '10, 10',
+        });
+      else
+        layer.setStyle({
+          color: layer.attributes.color,
+          dashArray: null,
+          fillOpacity: 0.3,
+        });
+    }
+  },
+
+  _setIcon:function(layer) {
+    if (layer instanceof L.Marker &&
+        layer.attributes.markerType == 'text') {
+      var div = L.DomUtil.create("div", "");
+      div.innerHTML = layer.attributes.text;
+      layer.setIcon(new DivIcon({
+        className: 'localdrawoverlay-text',
+        html: div,
+        iconSize: null,
+      }));
+    }
   },
 
   getSelectedLayer:function() {
-    return this.selected_layer;
+    return this._selected_layer;
   },
 
   _unselectLayer:function() {
-    if (this.selected_layer == null) return;
-    var layer = this.selected_layer;
-    this.selected_layer = null;
+    if (this._selected_layer == null) return;
+
+    var layer = this._selected_layer;
+    this._selected_layer = null
+
     layer.editing.disable();
     this._updateStyle(layer);
+
+    if (layer == this._edited_layer)
+      this._endEdit();
+
     // TODO: Comment gerer les sauvegardes et annulations ?
     this.save();
     this.fire("layerunselect", layer);
-  },
+},
 
   selectLayer:function(layer) {
     // Unselect
-    if (layer == this.selected_layer || !this.hasLayer(layer)) {
+    if (layer == this._selected_layer || !this.hasLayer(layer)) {
       this._unselectLayer();
       return;
     }
 
     this._unselectLayer();
-    this.selected_layer = layer;
+    this._selected_layer = layer;
+    if (layer instanceof L.Path) {
+      layer.bringToFront();
+      this._updateStyle(layer);
+    }
     layer.editing.enable();
-    layer.bringToFront();
-    this._updateStyle(layer);
     this.fire("layerselect", layer);
+  },
+
+  _endEdit:function(save = true) {
+    if (this._edited_layer) {
+      var layer = this._edited_layer;
+      var value = this._edit_field.value;
+      L.DomEvent.off(this._edit_field, 'blur', this._endEdit);
+      L.DomEvent.off(this._edit_field, 'keydown', this._keypressedField);
+      this._edit_field = null;
+      this._edited_layer = null;
+      this._selected_layer = null;
+      layer.editing.disable();
+
+      if (save) {
+        // Remove marker if text empty
+        if (value == "") {
+          this.removeLayer(layer);
+          this.save();
+          return;
+        }
+        layer.attributes.text = value;
+        this.save();
+      }
+      this._setIcon(layer);
+    }
+  },
+
+  _keypressedField: function(e) {
+    if (e.code == "Enter")
+      this._endEdit(true);
+    if (e.code == "Escape")
+      this._endEdit(false);
+  },
+
+  _editLayer:function(layer) {
+    this._endEdit();
+
+    if (layer instanceof L.Marker && layer.attributes.markerType == 'text') {
+      this._edited_layer = layer;
+      var content = L.DomUtil.create("input", "");
+      L.DomEvent.disableClickPropagation(content);
+      content.type = "text";
+      content.value = layer.attributes.text;
+      layer.setIcon(new DivIcon({
+        className: 'localdrawoverlay-text',
+        html: content,
+        iconSize: null,
+      }));
+      L.DomEvent.on(content, 'blur', this._endEdit, this);
+      L.DomEvent.on(content, 'keydown', this._keypressedField, this);
+      this._edit_field = content;
+      content.focus();
+    }
   },
 
   save:function() {
@@ -643,29 +782,32 @@ export default L.FeatureGroup.extend({
       if (storage != null)
         storage.forEach(function(storable) {
           var layer = storableToLayer(storable);
-          if (layer != null)
+          if (layer != null) {
             overlay.addLayer(layer);
+          }
         });
     }
   },
 
   removeLayer:function(layer) {
-    if (layer == this.selected_layer)
+    if (layer == this._selected_layer)
       this._unselectLayer();
     L.FeatureGroup.prototype.removeLayer.call(this, layer);
   },
 
   addLayer:function(layer) {
-    var overlay = this;
     if (layer.attributes == null) {
-      layer.attributes = {};
-      layer.attributes.color = 'blue';
+      if (layer instanceof L.path)
+        layer.attributes = { color: '#fff' };
+      if (layer instanceof L.marker)
+        layer.attributes = { markerType: 'unknown' };
     }
     this._updateStyle(layer);
+    this._setIcon(layer);
 
     // Select layer on click
-    layer.on('click', function(e) { overlay.selectLayer(e.target); });
-
+    layer.on('click', function(e) { this.selectLayer(e.target); }, this);
+    layer.on('dblclick', function(e) { this._editLayer(e.target); }, this);
     L.FeatureGroup.prototype.addLayer.call(this, layer);
   },
 
@@ -683,10 +825,19 @@ export default L.FeatureGroup.extend({
     if (storable == null) return;
     var layer = storableToLayer(storable);
     if (layer == null) return;
-    layer.attributes.color = this.colorControl.getSelectedColor();
-    this.addLayer(layer);
-    // Automatically select new layer
-    this.selectLayer(layer);
+    if (layer instanceof L.Path) {
+      layer.attributes.color = this.colorControl.getSelectedColor();
+    }
+    if (layer instanceof L.Marker) {
+      layer.attributes.markerType = 'text';
+      layer.attributes.text = "";
+      this.addLayer(layer);
+      this.selectLayer(layer);
+      this._editLayer(layer);
+    } else {
+      this.addLayer(layer);
+      this.selectLayer(layer);
+    }
     this.save();
   },
 
