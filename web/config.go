@@ -23,6 +23,7 @@ type PublicConfig struct {
 	WorldName       string               `json:"worldname"`
 	WorldId         string               `json:"worldid"`
 	Geometry        *geometry.Geometry   `json:"geometry"`
+	RasterOverlays  []app.RasterOverlay  `json:"rasteroverlays"`
 }
 
 type ConfigHandler struct {
@@ -42,6 +43,7 @@ func (h *ConfigHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 	webcfg.WorldName = path.Base(h.ctx.WorldDir)
 
 	webcfg.Geometry = h.ctx.Geometry
+	webcfg.RasterOverlays = h.ctx.RasterOverlays
 
 	// Create a hash ID from map coordinates and map name
 	// TODO: Find a better solution (file stored ID ? what should ID represent?)

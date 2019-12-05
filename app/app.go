@@ -23,7 +23,7 @@ type App struct {
 	WorldDir    string
 	Worldconfig map[string]string
 	Geometry    *geometry.Geometry
-
+	RasterOverlays []RasterOverlay
 	Blockdb  db.DBAccessor
 	Objectdb mapobjectdb.DBAccessor
 	TileDB   *tiledb.TileDB

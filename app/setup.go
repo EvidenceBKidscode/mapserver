@@ -45,6 +45,12 @@ func Setup(p params.ParamsType, cfg *Config, worlddir string) *App {
 		logrus.WithFields(logrus.Fields{"error": err}).Warn("No geometry data for this world")
 	}
 
+	//Parse overlays data if any
+	a.RasterOverlays, err = RasterOverlaysParse(a.GetWorldPath("worldmods/minimap/overlays.json"))
+	if (err != nil) {
+		logrus.WithFields(logrus.Fields{"error": err}).Warn("No raster overlays for this world")
+	}
+
 	logrus.WithFields(logrus.Fields{"version": Version}).Info("Starting mapserver")
 
 	switch a.Worldconfig[worldconfig.CONFIG_BACKEND] {
