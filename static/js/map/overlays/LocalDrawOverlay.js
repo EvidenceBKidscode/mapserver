@@ -192,16 +192,16 @@ Object.assign(L.drawLocal, {
 var ColorControl = L.Control.extend({
   // TODO: Move colors to options
   _colors: [],
-  _names: [],
-  _buttons: [],
   _selectedColor: 0,
   edit: {},
 
   initialize: function (options) {
     var index = 0;
     for (name in options.colors) {
-      this._colors[index] = options.colors[name];
-      this._names[index] = name;
+      this._colors[index] = {
+        value: options.colors[name],
+        name: name,
+      };
       index ++;
     }
     if (options) {
@@ -210,49 +210,43 @@ var ColorControl = L.Control.extend({
   },
 
   getSelectedColor: function() {
-    return this._colors[this._selectedColor];
+    return this._colors[this._selectedColor].value;
   },
 
-  selectColor: function(name) {
+  selectColor: function(value) {
     for (let i = 0; i < this._colors.length; i++)
-      if (this._colors[i] == name) {
+      if (this._colors[i].value == value) {
         this.selectColorNumber(i);
         return;
       }
   },
 
   selectColorNumber: function(number) {
-    if (number < 0 || number >= this._buttons.length)
+    if (number < 0 || number >= this._colors.length)
       return;
 
-    for (let i = 0; i < this._buttons.length; i++)
-      this._buttons[i].classList.remove("selected");
+    for (let i = 0; i < this._colors.length; i++)
+      this._colors[i].button.classList.remove("selected");
 
-    this._buttons[number].classList.add("selected");
+    this._colors[number].button.classList.add("selected");
     this._selectedColor = number;
 
-    this.fire("colorselect", { color: this._colors[number], number: number, });
+    this.fire("colorselect", { color: this._colors[number].value, number: number, });
   },
 
   layerSelected: function(layer) {
     this.selectColor(layer.attributes.color);
   },
 
-  _createButton: function(title, bgcolor, container, fn) {
-    var link = L.DomUtil.create('a',
-      'localdrawoverlay-button', container);
-    link.href = '#';
-    link.title = title;
-
-    link.setAttribute('role', 'button');
-    link.setAttribute('aria-label', title);
-    var div = L.DomUtil.create('div', 'localdrawoverlay-color-button', link);
-    div.style["background-color"] = bgcolor;
-    L.DomEvent.disableClickPropagation(link);
-    L.DomEvent.on(link, 'click', L.DomEvent.stop);
-    L.DomEvent.on(link, 'click', fn, this);
-    L.DomEvent.on(link, 'click', this._refocusOnMap, this);
-    return link;
+  _onClick: function(e) {
+    console.log(e.target);
+    console.log(e.target.parentElement);
+    for (let i = 0; i < this._colors.length; i++)
+      if (this._colors[i].button == e.target ||
+          this._colors[i].button == e.target.parentElement ) {
+        this.selectColorNumber(i);
+        break;
+      }
   },
 
   onAdd: function(map) {
@@ -260,8 +254,18 @@ var ColorControl = L.Control.extend({
     L.DomEvent.disableClickPropagation(div);
 
     for (let i = 0; i < this._colors.length; i++) {
-      this._buttons[i] = this._createButton(this._names[i], this._colors[i], div,
-        function(e) { this.selectColorNumber(i); });
+      var link = L.DomUtil.create('a', 'localdrawoverlay-button', div);
+      link.href = '#';
+      link.title = this._colors[i].name;
+      link.setAttribute('role', 'button');
+      link.setAttribute('aria-label', link.title);
+      var div2 = L.DomUtil.create('div', 'localdrawoverlay-color-button', link);
+      div2.style["background-color"] = this._colors[i].value;
+      L.DomEvent.disableClickPropagation(link);
+      L.DomEvent.on(link, 'click', L.DomEvent.stop);
+      L.DomEvent.on(link, 'click', this._onClick, this);
+      L.DomEvent.on(link, 'click', this._refocusOnMap, this);
+      this._colors[i].button = link;
     }
     this.selectColorNumber(this._selectedColor);
 
@@ -276,10 +280,10 @@ var ColorControl = L.Control.extend({
     if (this.options.featureGroup != null)
       this.options.featureGroup.off("layerselect", this.layerSelected);
 
-    for (let i = 0; i < this._buttons.length; i++) {
-      L.DomEvent.off(this._buttons[i], 'click', DomEvent.stop);
-      L.DomEvent.off(this._buttons[i], 'click', fn);
-      L.DomEvent.off(this._buttons[i], 'click', this._refocusOnMap);
+    for (let i = 0; i < this._colors.length; i++) {
+      L.DomEvent.off(this._colors[i].button, 'click', L.DomEvent.stop);
+      L.DomEvent.off(this._colors[i].button, 'click', this._onClick);
+      L.DomEvent.off(this._colors[i].button, 'click', this._refocusOnMap);
     }
   },
 });
