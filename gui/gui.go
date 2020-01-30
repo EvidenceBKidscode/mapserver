@@ -30,7 +30,6 @@ func checkWorld(path string) bool {
 }
 
 type Gui struct {
-	basedir string
 	app fyne.App
 	world string
 	params params.ParamsType
@@ -41,7 +40,7 @@ type Gui struct {
 }
 
 func (self *Gui) startMapServer() {
-	worlddir := filepath.Join(self.basedir, "..", "worlds", self.world)
+	worlddir := filepath.Join(getUserPath(), "worlds", self.world)
 
 	//parse Config
 	cfg, err := app.ParseConfig(filepath.Join(worlddir, "mapserver.json"))
@@ -78,16 +77,16 @@ func (self *Gui) startMapServer() {
 }
 
 func (self *Gui) Run(p params.ParamsType) {
-	self.basedir = filepath.Dir(os.Args[0])
+	worldpath := filepath.Join(getUserPath(), "worlds")
 	self.app = fyneapp.New()
 	self.params = p
 
 	// Find available worlds
 	var worlds []string
-	files, err := ioutil.ReadDir(filepath.Join(self.basedir, "..", "worlds"))
+	files, err := ioutil.ReadDir(worldpath)
 	if err == nil {
 		for _, file := range files {
-			if checkWorld(filepath.Join(self.basedir, "..", "worlds", file.Name())) {
+			if checkWorld(filepath.Join(worldpath, file.Name())) {
 				worlds = append(worlds, file.Name())
 			}
 		}
