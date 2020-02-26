@@ -23,8 +23,6 @@ func Job(ctx *app.App) {
 			initialRender(ctx)
 		}
 	}
-	// Gui feedback
-	ctx.SetStatus("Cartographe lancé", -1)
 
 	incrementalRender(ctx)
 

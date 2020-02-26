@@ -13,7 +13,6 @@ import (
 	"mapserver/web"
 	"mapserver/mapobject"
 	"net/url"
-//"fmt"
 )
 
 func checkWorld(path string) bool {
@@ -31,7 +30,7 @@ func checkWorld(path string) bool {
 
 type Gui struct {
 	app fyne.App
-	world string
+	worldpath string
 	params params.ParamsType
 	window fyne.Window
 	status_bar *widget.ProgressBar
@@ -40,27 +39,14 @@ type Gui struct {
 }
 
 func (self *Gui) startMapServer() {
-	worlddir := filepath.Join(getUserPath(), "worlds", self.world)
-
 	//parse Config
-	cfg, err := app.ParseConfig(filepath.Join(worlddir, "mapserver.json"))
+	cfg, err := app.ParseConfig(filepath.Join(self.worldpath, "mapserver.json"))
 	if err != nil {
 		panic(err)
 	}
 
 	//setup app context
-	ctx := app.Setup(self.params, cfg, worlddir)
-
-	//TODO: Rather use event bus
-	ctx.SetStatus = func(msg string, progress float64) {
-		self.status_text.SetText(msg)
-		if progress >= 0 {
-			self.status_bar.Show()
-			self.status_bar.SetValue(progress)
-		} else {
-			self.status_bar.Hide()
-		}
-	}
+	ctx := app.Setup(self.params, cfg, self.worldpath)
 
 	//Set up mapobject events
 	mapobject.Setup(ctx)
@@ -70,32 +56,25 @@ func (self *Gui) startMapServer() {
 		go tilerendererjob.Job(ctx)
 	}
 
-	self.status_text.SetText("Lancement du cartographe.")
+	self.status_text.SetText("Cartographe lancé.")
 	self.link.Show()
+
+	// Listend app web event bus
+	ctx.WebEventbus.AddListener(self)
+
 	//Start http server
 	web.Serve(ctx)
 }
 
 func (self *Gui) Run(p params.ParamsType) {
-	worldpath := filepath.Join(getUserPath(), "worlds")
+	worldbasepath := filepath.Join(getUserPath(), "worlds")
 	self.app = fyneapp.New()
 	self.params = p
-
-	// Find available worlds
-	var worlds []string
-	files, err := ioutil.ReadDir(worldpath)
-	if err == nil {
-		for _, file := range files {
-			if checkWorld(filepath.Join(worldpath, file.Name())) {
-				worlds = append(worlds, file.Name())
-			}
-		}
-	}
 
 	// Show main window
 	self.window = self.app.NewWindow("Cartographe Kidscode")
 	self.window.SetPadded(true)
-	self.status_text = widget.NewLabel("Cartographie non lancée.")
+	self.status_text = widget.NewLabel("Cartographe non lancé.")
 	self.status_bar = widget.NewProgressBar()
 	self.status_bar.Hide()
 	self.link = widget.NewHyperlink("Lien du cartographe", &url.URL{Scheme: "http", Host: "localhost:8080"})
@@ -109,41 +88,90 @@ func (self *Gui) Run(p params.ParamsType) {
 	))
 	self.window.Show()
 
-	if len(worlds) == 0 {
-		self.window.SetContent(widget.NewVBox(
-			widget.NewLabel("Désolé, aucun monde trouvé."),
-			widget.NewButton("Quitter", func() { self.app.Quit() }),
-		))
-	} else if len(worlds) == 1 {
-			self.world = worlds[0]
+	// World chosen from command line
+	if p.World != "" {
+		if checkWorld(p.World) {
+			self.worldpath = p.World
 			go self.startMapServer()
-	} else {
-		w := self.app.NewWindow("Cartographe Kidscode")
-		launch := widget.NewButton("Lancer le cartographe", func() {
-			self.window.Show()
-			w.Hide()
+		}
+		if checkWorld(filepath.Join(worldbasepath, p.World)) {
+			self.worldpath = filepath.Join(worldbasepath, p.World)
 			go self.startMapServer()
-		})
-		launch.Disable()
+		}
+	}
+	if self.worldpath == "" {
+		// Find available worlds
+		var worlds []string
+		files, err := ioutil.ReadDir(worldbasepath)
+		if err == nil {
+			for _, file := range files {
+				if checkWorld(filepath.Join(worldbasepath, file.Name())) {
+					worlds = append(worlds, file.Name())
+				}
+			}
+		}
 
-		radio := widget.NewRadio(worlds, func(s string) {
-			self.world = s
-			launch.Enable()
-		})
-		radio.Horizontal = false
+		// No world
+		if len(worlds) == 0 {
+			self.window.SetContent(widget.NewVBox(
+				widget.NewLabel("Désolé, aucun monde trouvé."),
+				widget.NewButton("Quitter", func() { self.app.Quit() }),
+			))
+		// Only one world, start on it
+		} else if len(worlds) == 1 {
+				self.worldpath = filepath.Join(worldbasepath, worlds[0])
+				go self.startMapServer()
+		// Several world, ask to choose
+		} else {
+			w := self.app.NewWindow("Cartographe Kidscode")
+			launch := widget.NewButton("Lancer le cartographe", func() {
+				self.window.Show()
+				w.Hide()
+				go self.startMapServer()
+			})
+			launch.Disable()
 
-		w.SetContent(widget.NewVBox(
-			widget.NewLabel("Choisir un monde :"),
-			radio, launch,
-			widget.NewButton("Annuler", func() { self.app.Quit() }),
-		))
-		w.Show()
-		self.window.Hide()
+			radio := widget.NewRadio(worlds, func(s string) {
+				self.worldpath = filepath.Join(worldbasepath, s)
+				launch.Enable()
+			})
+			radio.Horizontal = false
+
+			w.SetContent(widget.NewVBox(
+				widget.NewLabel("Choisir un monde :"),
+				radio, launch,
+				widget.NewButton("Annuler", func() { self.app.Quit() }),
+			))
+			w.Show()
+			self.window.Hide()
+		}
 	}
 
 	self.app.Run()
 }
 
-func (self *Gui) SetStatus(message string, progress int) {
 
+func (self *Gui) OnEvent(eventtype string, ev interface{}) {
+	switch eventtype {
+	case "initial-render-progress":
+		ev := ev.(*tilerendererjob.InitialRenderEvent)
+		if ev.Progress < 1 {
+			self.status_text.SetText("Rendu initial de la carte")
+			self.status_bar.Show()
+			self.status_bar.SetValue(ev.Progress)
+		} else {
+			self.status_text.SetText("Cartographe lancé")
+			self.status_bar.Hide()
+		}
+	case "incremental-render-progress":
+		ev := ev.(*tilerendererjob.IncrementalRenderEvent)
+		if ev.Progress < 1 {
+			self.status_text.SetText("Mise à jour de la carte")
+			self.status_bar.Show()
+			self.status_bar.SetValue(ev.Progress)
+		} else {
+			self.status_text.SetText("Cartographe lancé")
+			self.status_bar.Hide()
+		}
+	}
 }

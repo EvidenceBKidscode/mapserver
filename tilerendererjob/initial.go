@@ -14,6 +14,7 @@ type InitialRenderEvent struct {
 
 func initialRender(ctx *app.App) {
 	logrus.Info("Starting initial rendering job")
+	ctx.WebEventbus.Emit("initial-render-progress", &InitialRenderEvent{Progress: 0})
 
 	for true {
 		start := time.Now()
@@ -23,10 +24,6 @@ func initialRender(ctx *app.App) {
 		if err != nil {
 			panic(err)
 		}
-
-		// TODO: Use eventbus
-		// Gui feedback
-		ctx.SetStatus("Rendu initial de la carte", result.Progress)
 
 		if len(result.List) == 0 && !result.HasMore {
 			ctx.Settings.SetBool(settings.SETTING_INITIAL_RUN, false)

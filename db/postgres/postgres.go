@@ -6,7 +6,7 @@ import (
 	"mapserver/db"
 	"mapserver/vfs"
 	"time"
-
+	"errors"
 	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
 )
@@ -146,4 +146,11 @@ func New(connStr string) (*PostgresAccessor, error) {
 
 	sq := &PostgresAccessor{db: db}
 	return sq, nil
+}
+
+func (this *PostgresAccessor) FindModifiedBlocks(mtime int64, pos *coords.MapBlockCoords, limit int) ([]*db.Block, error) {
+	return nil, errors.New("Not implemented for Postgres")
+}
+func (this *PostgresAccessor) CountModifiedBlocks(mtime int64) (int64, int64, error) {
+	return 0, 0, errors.New("Not implemented for Postgres")
 }

@@ -27,4 +27,6 @@ type DBAccessor interface {
 	FindBlocksByMtime(gtmtime int64, limit int) ([]*Block, error)
 	FindNextInitialBlocks(s settings.Settings, layers []*layer.Layer, limit int) (*InitialBlocksResult, error)
 	GetBlock(pos *coords.MapBlockCoords) (*Block, error)
+	FindModifiedBlocks(mtime int64, pos *coords.MapBlockCoords, limit int) ([]*Block, error)
+	CountModifiedBlocks(mtime int64) (int64, int64, error)
 }

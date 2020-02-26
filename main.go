@@ -78,8 +78,6 @@ func Run(p params.ParamsType) {
 	//setup app context
 	ctx := app.Setup(p, cfg, worlddir)
 
-	ctx.SetStatus = func(msg string, progress float64) {}
-
 	//Set up mapobject events
 	mapobject.Setup(ctx)
 
