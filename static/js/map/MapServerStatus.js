@@ -13,7 +13,7 @@ var mapServerStatusRender = function(title, progress){
     ])
   else
     return m("div", [
-      m("p", "Carte à jour"),
+      m("p", "Carte prête"),
       m("div", {class: "serverstatus-bar"}, "")
     ])
 };
@@ -25,7 +25,7 @@ export default L.Control.extend({
     },
 
     onAdd: function() {
-      var div = L.DomUtil.create('div', 'leaflet-bar leaflet-custom-display mapserver-status');
+      var div = L.DomUtil.create('div', 'leaflet-bar leaflet-custom-display serverstatus');
       m.render(div, mapServerStatusRender(1))
       this.wsChannel.addListener("incremental-render-progress", function(info){
         m.render(div, mapServerStatusRender("Mise à jour de la carte", info.progress));

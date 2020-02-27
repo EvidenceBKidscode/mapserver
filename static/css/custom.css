@@ -62,6 +62,10 @@ body {
   height: 44px;
   }
 
+.serverstatus p {
+	margin-bottom:0.2em;
+	text-align:center;
+}
 .serverstatus-bar {
 	width: 200px;
 	height: 10px;
