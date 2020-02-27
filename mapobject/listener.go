@@ -42,8 +42,8 @@ func (this *Listener) OnEvent(eventtype string, o interface{}) {
 	if err != nil {
 		panic(err)
 	}
-
-	this.ctx.WebEventbus.Emit("mapobjects-cleared", block.Pos)
+// Seems useless
+//	this.ctx.WebEventbus.Emit("mapobjects-cleared", block.Pos)
 
 	//TODO: refactor into single loop
 	for id, name := range block.BlockMapping {
