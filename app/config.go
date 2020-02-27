@@ -21,7 +21,8 @@ type Config struct {
 	Webdev                 bool                    `json:"webdev"`
 	WebApi                 *WebApiConfig           `json:"webapi"`
 	Layers                 []*layer.Layer          `json:"layers"`
-	RenderingFetchLimit    int                     `json:"renderingfetchlimit"`
+	InitialFetchLimit      int                     `json:"initialfetchlimit"`
+	IncrementalFetchLimit  int                     `json:"incrementalfetchlimit"`
 	RenderingJobs          int                     `json:"renderingjobs"`
 	RenderingQueue         int                     `json:"renderingqueue"`
 	MapObjects             *MapObjectConfig        `json:"mapobjects"`
@@ -170,7 +171,8 @@ func ParseConfig(configfilepath string) (*Config, error) {
 		Webdev:                 false,
 		WebApi:                 &webapi,
 		Layers:                 layers,
-		RenderingFetchLimit:    10000,
+		InitialFetchLimit:      2000,
+		IncrementalFetchLimit:  500,
 		RenderingJobs:          runtime.NumCPU(),
 		RenderingQueue:         100,
 		MapObjects:             &mapobjs,

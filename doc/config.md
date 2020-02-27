@@ -40,7 +40,8 @@ The mapserver will generate a fresh `mapserver.json` if there is none at startup
 			"from": -16
 		}
 	],
-	"renderingfetchlimit": 1000,
+	"initialfetchlimit": 1000,
+	"incrementalfetchlimit": 500,
 	"renderingjobs": 2,
 	"renderingqueue": 100,
 	"mapobjects": {
@@ -102,10 +103,22 @@ existing tiles and start rendering from scratch.
 Number of cores to use for rendering, defaults to all available cores.
 If CPU-limiting is desired, this is a good spot to begin with (Set to 1 for single-thread)
 
-#### renderingfetchlimit
-Number of mapblocks to collect at once while rendering:
+#### initialfetchlimit
+Number of mapblocks to collect at once while initial rendering:
 * More means faster but also more RAM usage
 * Less means slower but less RAM usage
+
+This also the number of mapblocks between two information update (console and on map)
+
+For a small system (Raspberry PI) a setting of 1000 is ok.
+Faster system can use the default (10'000)
+
+#### incrementalfetchlimit
+Number of mapblocks to collect at once while incremental rendering:
+* More means faster but also more RAM usage
+* Less means slower but less RAM usage
+
+This also the number of mapblocks between two information update (console and on map)
 
 For a small system (Raspberry PI) a setting of 1000 is ok.
 Faster system can use the default (10'000)

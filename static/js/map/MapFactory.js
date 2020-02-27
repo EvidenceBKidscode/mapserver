@@ -7,6 +7,7 @@ import SnapShotControl from './SnapShotControl.js';
 import { OverlaySetup, GetLocalizedOverlays } from './Overlaysetup.js';
 import CustomOverlay from './CustomOverlay.js';
 import RealtimeTileLayer from './RealtimeTileLayer.js';
+import MapServerStatus from './MapServerStatus.js';
 
 import config from '../config.js';
 import '../lib/L.Control.Opacity.js';
@@ -56,6 +57,9 @@ export function createMap(node, layerId, zoom, lat, lon){
 
   // Layer Control
   L.control.layers({}, GetLocalizedOverlays(overlays), { position: "topright" }).addTo(map);
+
+  // Mapserver status
+  new MapServerStatus(wsChannel, { position: 'bottomright' }).addTo(map);
 
   return map;
 }
