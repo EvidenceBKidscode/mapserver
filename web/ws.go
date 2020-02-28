@@ -52,10 +52,14 @@ func (t *WS) OnEvent(eventtype string, o interface{}) {
 	defer t.mutex.RUnlock()
 
 	for _, c := range t.channels {
+		c <- buf.Bytes()
+		/* With this previous code, many messages fell back in default,
+		   and got lost. Not sure how the whole thing will react with
+		   blocking channel.
 		select {
 		case c <- buf.Bytes():
 		default:
-		}
+		} */
 	}
 }
 
