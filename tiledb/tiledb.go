@@ -96,16 +96,19 @@ func (this *TileDB) SetTile(pos *coords.TileCoords, tile []byte) error {
 
 func (this *TileDB) MarkOutdated(pos *coords.TileCoords) {
 	var npos *coords.TileCoords = pos
-	mutex.RLock()
-	defer mutex.RUnlock()
 
 	for npos.Zoom >= coords.MIN_ZOOM && !this.IsOutdated(npos) {
+		mutex.Lock()
 		this.setOutdated(npos, true)
+		mutex.Unlock()
 		npos = npos.GetZoomedOutTile()
 	}
 }
 
 func (this *TileDB) IsOutdated(pos *coords.TileCoords) bool {
+	mutex.RLock()
+	defer mutex.RUnlock()
+
 	if this.outdated[pos.Zoom] == nil {
 		return false
 	}
@@ -132,6 +135,9 @@ func (this *TileDB) setOutdated(pos *coords.TileCoords, outdated bool) {
 }
 
 func (this *TileDB) GetOutdatedByZoom(zoom int) []coords.TileCoords {
+	mutex.RLock()
+	defer mutex.RUnlock()
+
 	var tiles []coords.TileCoords
 	if this.outdated[zoom] == nil {
 		return tiles

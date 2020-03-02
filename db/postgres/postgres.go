@@ -154,3 +154,7 @@ func (this *PostgresAccessor) FindModifiedBlocks(mtime int64, pos *coords.MapBlo
 func (this *PostgresAccessor) CountModifiedBlocks(mtime int64) (int64, int64, error) {
 	return 0, 0, errors.New("Not implemented for Postgres")
 }
+
+func (this *PostgresAccessor) FindBlocksInArea(pos1 *coords.MapBlockCoords, pos2 *coords.MapBlockCoords) ([]*db.Block, error) {
+	return nil, errors.New("Not implemented for Postgres")
+}

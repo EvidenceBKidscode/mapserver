@@ -29,4 +29,5 @@ type DBAccessor interface {
 	GetBlock(pos *coords.MapBlockCoords) (*Block, error)
 	FindModifiedBlocks(mtime int64, pos *coords.MapBlockCoords, limit int) ([]*Block, error)
 	CountModifiedBlocks(mtime int64) (int64, int64, error)
+	FindBlocksInArea(pos1 *coords.MapBlockCoords, pos2 *coords.MapBlockCoords) ([]*Block, error)
 }

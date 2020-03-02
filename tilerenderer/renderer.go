@@ -153,6 +153,7 @@ func (tr *TileRenderer) renderImage(tc *coords.TileCoords) (error) {
 		mbr.Pos1.Y = currentLayer.From
 		mbr.Pos2.Y = currentLayer.To
 
+
 		img, err := tr.mapblockrenderer.Render(mbr.Pos1, mbr.Pos2)
 
 		if err != nil {

@@ -6,42 +6,21 @@ import (
 	"mapserver/mapblockparser"
 	"sync"
 
-	cache "github.com/patrickmn/go-cache"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sirupsen/logrus"
 )
 
 var lock = &sync.RWMutex{}
 
 func (a *MapBlockAccessor) GetMapBlock(pos *coords.MapBlockCoords) (*mapblockparser.MapBlock, error) {
-	key := getKey(pos)
-
-	//maintenance
-	cacheBlocks.Set(float64(a.blockcache.ItemCount()))
-	if a.blockcache.ItemCount() > a.maxcount {
-		//flush cache
-		fields := logrus.Fields{
-			"cached items": a.blockcache.ItemCount(),
-			"maxcount":     a.maxcount,
-		}
-		logrus.WithFields(fields).Debug("Flushing cache")
-
-		a.blockcache.Flush()
-	}
-
 	//read section
 	lock.RLock()
 
-	cachedblock, found := a.blockcache.Get(key)
+	cachedblock, found := a.blockcache.Get(pos)
 	if found {
 		defer lock.RUnlock()
 
 		getCacheHitCount.Inc()
-		if cachedblock == nil {
-			return nil, nil
-		} else {
-			return cachedblock.(*mapblockparser.MapBlock), nil
-		}
+		return cachedblock, nil
 	}
 
 	//end read
@@ -55,14 +34,10 @@ func (a *MapBlockAccessor) GetMapBlock(pos *coords.MapBlockCoords) (*mapblockpar
 	defer lock.Unlock()
 
 	//try read
-	cachedblock, found = a.blockcache.Get(key)
+	cachedblock, found = a.blockcache.Get(pos)
 	if found {
 		getCacheHitCount.Inc()
-		if cachedblock == nil {
-			return nil, nil
-		} else {
-			return cachedblock.(*mapblockparser.MapBlock), nil
-		}
+		return cachedblock, nil
 	}
 
 	block, err := a.accessor.GetBlock(pos)
@@ -73,7 +48,7 @@ func (a *MapBlockAccessor) GetMapBlock(pos *coords.MapBlockCoords) (*mapblockpar
 	if block == nil {
 		//no mapblock here
 		cacheBlockCount.Inc()
-		a.blockcache.Set(key, nil, cache.DefaultExpiration)
+		a.blockcache.Set(pos, nil)
 		return nil, nil
 	}
 
@@ -87,7 +62,7 @@ func (a *MapBlockAccessor) GetMapBlock(pos *coords.MapBlockCoords) (*mapblockpar
 	a.Eventbus.Emit(eventbus.MAPBLOCK_RENDERED, mapblock)
 
 	cacheBlockCount.Inc()
-	a.blockcache.Set(key, mapblock, cache.DefaultExpiration)
+	a.blockcache.Set(pos, mapblock)
 
 	return mapblock, nil
 }
