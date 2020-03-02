@@ -110,8 +110,8 @@ func ParseConfig(configfilepath string) (*Config, error) {
 		&layer.Layer{
 			Id:   0,
 			Name: "Ground",
-			From: -1,
-			To:   20,
+			From: 20,
+			To:   100,
 		},
 	}
 
