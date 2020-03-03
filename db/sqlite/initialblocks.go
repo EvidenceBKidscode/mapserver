@@ -23,18 +23,23 @@ order by b.pos asc, b.mtime asc
 limit ?
 `*/
 const getLastBlockQuery = `
-select pos,mtime
+select b.x, b.z, max(b.mtime)
 from blocks b
-where b.pos > ?
-order by b.pos asc
+where b.x > ?1 or b.x == ?1 and b.z > ?2
+group by b.x, b.z
+order by b.x, b.z
 limit ?
 `
+
+// TODO:ADD LAYER Y in query
+
+// TODO:Return sectors, not blocks
 
 func (this *Sqlite3Accessor) FindNextInitialBlocks(s settings.Settings, layers []*layer.Layer, limit int) (*db.InitialBlocksResult, error) {
 	result := &db.InitialBlocksResult{}
 
 	blocks := make([]*db.Block, 0)
-	lastpos := s.GetInt64(SETTING_LAST_POS, coords.MinPlainCoord-1)
+	lastpos := coords.PlainToCoord(s.GetInt64(SETTING_LAST_POS, coords.MinPlainCoord-1))
 
 	processedcount := s.GetInt64(SETTING_PROCESSED_LEGACY_COUNT, 0)
 	totallegacycount := s.GetInt64(SETTING_TOTAL_LEGACY_COUNT, -1)
@@ -48,7 +53,9 @@ func (this *Sqlite3Accessor) FindNextInitialBlocks(s settings.Settings, layers [
 
 		s.SetInt64(SETTING_TOTAL_LEGACY_COUNT, int64(totallegacycount))
 	}
-	rows, err := this.db.Query(getLastBlockQuery, lastpos, limit)
+
+
+	rows, err := this.db.Query(getLastBlockQuery, lastpos.X, lastpos.Z, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -59,11 +66,11 @@ func (this *Sqlite3Accessor) FindNextInitialBlocks(s settings.Settings, layers [
 		result.HasMore = true
 		result.UnfilteredCount++
 
-		var pos int64
-		var data []byte
+		var x int
+		var z int
 		var mtime int64
 
-		err = rows.Scan(&pos, /*&data,*/ &mtime)
+		err = rows.Scan(&x, &z, &mtime)
 		if err != nil {
 			return nil, err
 		}
@@ -72,17 +79,20 @@ func (this *Sqlite3Accessor) FindNextInitialBlocks(s settings.Settings, layers [
 			result.LastMtime = mtime
 		}
 
-		mb := convertRows(pos, data, mtime)
+		mb := db.Block{Pos: coords.NewMapBlockCoords(x, 20, z), Data: nil, Mtime: 0}
 
 		// new position
-		lastpos = pos
+		lastpos.X = x
+		lastpos.Z = z
+
+/*TODO:MANAGE LAYERS
 
 		blockcoordy := mb.Pos.Y
 		currentlayer := layer.FindLayerByY(layers, blockcoordy)
 
 		if currentlayer != nil {
-			blocks = append(blocks, mb)
-		}
+*/			blocks = append(blocks, &mb)
+//		}
 	}
 
 	s.SetInt64(SETTING_PROCESSED_LEGACY_COUNT, int64(result.UnfilteredCount)+processedcount)
@@ -91,7 +101,7 @@ func (this *Sqlite3Accessor) FindNextInitialBlocks(s settings.Settings, layers [
 	result.List = blocks
 
 	//Save current positions of initial run
-	s.SetInt64(SETTING_LAST_POS, lastpos)
+	s.SetInt64(SETTING_LAST_POS, coords.CoordToPlain(lastpos))
 
 	return result, nil
 }

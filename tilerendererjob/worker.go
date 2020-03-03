@@ -9,7 +9,6 @@ import (
 func worker(ctx *app.App, coords <-chan coords.TileCoords, done chan bool) {
 	for tc := range coords {
 		//render tile
-
 		fields := logrus.Fields{
 			"X":       tc.X,
 			"Y":       tc.Y,
@@ -30,6 +29,7 @@ func worker(ctx *app.App, coords <-chan coords.TileCoords, done chan bool) {
 			}
 			logrus.WithFields(fields).Error("Tile render job tile")
 		}
+
 	}
 
 	done <- true

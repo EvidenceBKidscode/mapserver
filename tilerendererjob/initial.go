@@ -20,11 +20,9 @@ func initialRender(ctx *app.App) {
 		start := time.Now()
 
 		result, err := ctx.MapBlockAccessor.FindNextLegacyBlocks(ctx.Settings, ctx.Config.Layers, ctx.Config.InitialFetchLimit)
-
 		if err != nil {
 			panic(err)
 		}
-
 		if len(result.List) == 0 && !result.HasMore {
 
 			ctx.Settings.SetBool(settings.SETTING_INITIAL_RUN, false)
