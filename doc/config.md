@@ -40,7 +40,7 @@ The mapserver will generate a fresh `mapserver.json` if there is none at startup
 			"from": -16
 		}
 	],
-	"initialfetchlimit": 1000,
+	"initialfetchlimit": 5000,
 	"incrementalfetchlimit": 500,
 	"renderingjobs": 2,
 	"renderingqueue": 100,
