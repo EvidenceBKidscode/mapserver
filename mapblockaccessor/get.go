@@ -16,6 +16,34 @@ var lock = &sync.RWMutex{}
 func (a *MapBlockAccessor) GetMapBlockNoLoad(pos *coords.MapBlockCoords) (*mapblockparser.MapBlock, error, bool) {
 	key := getKey(pos)
 
+	//read section
+	lock.RLock()
+	defer lock.RUnlock()
+
+	cachedblock, found := a.blockcache.Get(key)
+	if found {
+		getCacheHitCount.Inc()
+		if cachedblock == nil {
+			return nil, nil, found
+		} else {
+			return cachedblock.(*mapblockparser.MapBlock), nil, found
+		}
+	}
+
+	return nil, nil, found
+}
+
+func (a *MapBlockAccessor) GetMapBlock(pos *coords.MapBlockCoords) (*mapblockparser.MapBlock, error) {
+	bloc, err, found := a.GetMapBlockNoLoad(pos)
+
+	if found {
+		return bloc, err
+	}
+
+	// TODO : Cela vide tout le cache si le cache dépasse le nombre d'items.
+	// Du coup on repart à zéro régulièrement. Il y a probablement mieux comme
+	// stratégie
+
 	//maintenance
 	cacheBlocks.Set(float64(a.blockcache.ItemCount()))
 	if a.blockcache.ItemCount() > a.maxcount {
@@ -27,34 +55,6 @@ func (a *MapBlockAccessor) GetMapBlockNoLoad(pos *coords.MapBlockCoords) (*mapbl
 		logrus.WithFields(fields).Debug("Flushing cache")
 
 		a.blockcache.Flush()
-	}
-
-	//read section
-	lock.RLock()
-
-	cachedblock, found := a.blockcache.Get(key)
-	if found {
-		defer lock.RUnlock()
-
-		getCacheHitCount.Inc()
-		if cachedblock == nil {
-			return nil, nil, found
-		} else {
-			return cachedblock.(*mapblockparser.MapBlock), nil, found
-		}
-	}
-
-	//end read
-	lock.RUnlock()
-
-	return nil, nil, found
-}
-
-func (a *MapBlockAccessor) GetMapBlock(pos *coords.MapBlockCoords) (*mapblockparser.MapBlock, error) {
-	bloc, err, found := a.GetMapBlockNoLoad(pos)
-
-	if found {
-		return bloc, err
 	}
 
 	key := getKey(pos)

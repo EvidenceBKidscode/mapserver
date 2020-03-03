@@ -171,7 +171,7 @@ func ParseConfig(configfilepath string) (*Config, error) {
 		Webdev:                 false,
 		WebApi:                 &webapi,
 		Layers:                 layers,
-		InitialFetchLimit:      10000,
+		InitialFetchLimit:      2000,
 		IncrementalFetchLimit:  500,
 		RenderingJobs:          runtime.NumCPU(),
 		RenderingQueue:         100,
