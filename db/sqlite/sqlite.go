@@ -137,7 +137,7 @@ func (this *Sqlite3Accessor) FindBlocksByMtime(gtmtime int64, limit int) ([]*db.
 }
 
 func (db *Sqlite3Accessor) CountBlocks() (int, error) {
-	rows, err := db.db.Query(countBlocksQuery)
+	rows, err := db.db.Query(`select count(*) from (select distinct x, z from blocks)`)
 	if err != nil {
 		return 0, err
 	}
