@@ -7,15 +7,12 @@ import (
 	"mapserver/eventbus"
 
 	"time"
-
-	cache "github.com/patrickmn/go-cache"
 )
 
 type MapBlockAccessor struct {
 	accessor   db.DBAccessor
-	blockcache *cache.Cache
+	blockcache *BlockCache
 	Eventbus   *eventbus.Eventbus
-	maxcount   int
 }
 
 func getKey(pos *coords.MapBlockCoords) string {
@@ -23,12 +20,11 @@ func getKey(pos *coords.MapBlockCoords) string {
 }
 
 func NewMapBlockAccessor(accessor db.DBAccessor, expiretime, purgetime time.Duration, maxcount int) *MapBlockAccessor {
-	blockcache := cache.New(expiretime, purgetime)
+	blockcache := NewBlockCache(maxcount)
 
 	return &MapBlockAccessor{
 		accessor:   accessor,
 		blockcache: blockcache,
 		Eventbus:   eventbus.New(),
-		maxcount:   maxcount,
 	}
 }
