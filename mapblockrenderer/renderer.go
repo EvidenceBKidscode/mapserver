@@ -109,12 +109,19 @@ func (r *MapBlockRenderer) Render(pos1, pos2 *coords.MapBlockCoords) (*image.NRG
 		xzOccupationMap[x] = make([]bool, 16)
 	}
 
+	r.accessor.PreloadArea(coords.NewMapBlockCoords(pos1.X, minY, pos1.Z),
+		coords.NewMapBlockCoords(pos2.X, maxY, pos2.Z));
+
 	for mapBlockY := maxY; mapBlockY >= minY; mapBlockY-- {
 		currentPos := coords.NewMapBlockCoords(pos1.X, mapBlockY, pos1.Z)
-		mb, err := r.accessor.GetMapBlock(currentPos)
+		mb, err, found := r.accessor.GetMapBlockNoLoad(currentPos)
 
 		if err != nil {
 			return nil, err
+		}
+
+		if ! found {
+			continue
 		}
 
 		if mb == nil || mb.IsEmpty() {

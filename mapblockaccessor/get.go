@@ -13,7 +13,7 @@ import (
 
 var lock = &sync.RWMutex{}
 
-func (a *MapBlockAccessor) GetMapBlock(pos *coords.MapBlockCoords) (*mapblockparser.MapBlock, error) {
+func (a *MapBlockAccessor) GetMapBlockNoLoad(pos *coords.MapBlockCoords) (*mapblockparser.MapBlock, error, bool) {
 	key := getKey(pos)
 
 	//maintenance
@@ -38,24 +38,37 @@ func (a *MapBlockAccessor) GetMapBlock(pos *coords.MapBlockCoords) (*mapblockpar
 
 		getCacheHitCount.Inc()
 		if cachedblock == nil {
-			return nil, nil
+			return nil, nil, found
 		} else {
-			return cachedblock.(*mapblockparser.MapBlock), nil
+			return cachedblock.(*mapblockparser.MapBlock), nil, found
 		}
 	}
 
 	//end read
 	lock.RUnlock()
 
+	return nil, nil, found
+}
+
+func (a *MapBlockAccessor) GetMapBlock(pos *coords.MapBlockCoords) (*mapblockparser.MapBlock, error) {
+	bloc, err, found := a.GetMapBlockNoLoad(pos)
+
+	if found {
+		return bloc, err
+	}
+
+	key := getKey(pos)
+
 	timer := prometheus.NewTimer(dbGetDuration)
 	defer timer.ObserveDuration()
 
+	// TODO - reorg mutex and avoid a second seek in cache
 	//write section
 	lock.Lock()
 	defer lock.Unlock()
 
 	//try read
-	cachedblock, found = a.blockcache.Get(key)
+	cachedblock, found := a.blockcache.Get(key)
 	if found {
 		getCacheHitCount.Inc()
 		if cachedblock == nil {

@@ -77,7 +77,7 @@ func (this *Sqlite3Accessor) FindModifiedBlocks(mtime int64, pos *coords.MapBloc
 	blocks := make([]*db.Block, 0)
 
 	rows, err := this.db.Query(`
-		SELECT b.pos,b.data,b.mtime
+		SELECT b.pos,b.mtime
 		FROM blocks b
 		WHERE mtime > ?1 or mtime = ?1 and (x > ?2 or
 				x = ?2 and (z > ?4 or z = ?4 and y > ?3))
@@ -96,7 +96,7 @@ func (this *Sqlite3Accessor) FindModifiedBlocks(mtime int64, pos *coords.MapBloc
 		var data []byte
 		var mtime int64
 
-		err = rows.Scan(&pos, &data, &mtime)
+		err = rows.Scan(&pos, /*&data, */&mtime)
 		if err != nil {
 			return nil, err
 		}
@@ -205,6 +205,33 @@ func (db *Sqlite3Accessor) GetBlock(pos *coords.MapBlockCoords) (*db.Block, erro
 	}
 
 	return nil, nil
+}
+
+func (this *Sqlite3Accessor) FindBlocksInArea(pos1 *coords.MapBlockCoords, pos2 *coords.MapBlockCoords) ([]*db.Block, error) {
+	blocks := make([]*db.Block, 0)
+
+	rows, err := this.db.Query(FindBlocksInArea, pos1.X, pos1.Y, pos1.Z, pos2.X, pos2.Y, pos2.Z)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var pos int64
+		var data []byte
+		var mtime int64
+
+		err = rows.Scan(&pos, &data, &mtime)
+		if err != nil {
+			return nil, err
+		}
+
+		mb := convertRows(pos, data, mtime)
+		blocks = append(blocks, mb)
+	}
+
+	return blocks, nil
 }
 
 func New(filename string) (*Sqlite3Accessor, error) {
