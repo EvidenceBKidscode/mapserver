@@ -62,6 +62,10 @@ func (this *Sqlite3Accessor) CountModifiedBlocks(mtime int64) (int64, int64, err
 		FROM blocks b
 		WHERE mtime > ?1
 		`, mtime)
+	if err != nil {
+		return 0, 0, err
+	}
+
 	var count int64
 	var newmtime int64
 	rows.Next()
@@ -77,7 +81,7 @@ func (this *Sqlite3Accessor) FindModifiedBlocks(mtime int64, pos *coords.MapBloc
 	blocks := make([]*db.Block, 0)
 
 	rows, err := this.db.Query(`
-		SELECT b.pos,b.mtime
+		SELECT b.pos,b.data,b.mtime
 		FROM blocks b
 		WHERE mtime > ?1 or mtime = ?1 and (x > ?2 or
 				x = ?2 and (z > ?4 or z = ?4 and y > ?3))
@@ -96,7 +100,7 @@ func (this *Sqlite3Accessor) FindModifiedBlocks(mtime int64, pos *coords.MapBloc
 		var data []byte
 		var mtime int64
 
-		err = rows.Scan(&pos, /*&data, */&mtime)
+		err = rows.Scan(&pos, &data, &mtime)
 		if err != nil {
 			return nil, err
 		}
