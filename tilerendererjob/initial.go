@@ -24,8 +24,8 @@ func initialRender(ctx *app.App) {
 		if err != nil {
 			panic(err)
 		}
-
 		if len(result.List) == 0 && !result.HasMore {
+
 			ctx.Settings.SetBool(settings.SETTING_INITIAL_RUN, false)
 
 			ev := InitialRenderEvent{

@@ -111,7 +111,7 @@ func ParseConfig(configfilepath string) (*Config, error) {
 			Id:   0,
 			Name: "Ground",
 			From: -1,
-			To:   20,
+			To:   100,
 		},
 	}
 

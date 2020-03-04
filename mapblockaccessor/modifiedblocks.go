@@ -6,7 +6,6 @@ import (
 	"mapserver/layer"
 	"mapserver/mapblockparser"
 
-	cache "github.com/patrickmn/go-cache"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 )
@@ -62,8 +61,6 @@ func (a *MapBlockAccessor) FindModifiedBlocks(mtime int64, pos *coords.MapBlockC
 		}
 		logrus.WithFields(fields).Debug("mapblock")
 
-		key := getKey(block.Pos)
-
 		mapblock, err := mapblockparser.Parse(block.Data, block.Mtime, block.Pos)
 		if err != nil {
 			fields := logrus.Fields{
@@ -78,7 +75,7 @@ func (a *MapBlockAccessor) FindModifiedBlocks(mtime int64, pos *coords.MapBlockC
 
 		a.Eventbus.Emit(eventbus.MAPBLOCK_RENDERED, mapblock)
 
-		a.blockcache.Set(key, mapblock, cache.DefaultExpiration)
+		a.blockcache.Set(block.Pos, mapblock)
 		cacheBlockCount.Inc()
 		mblist = append(mblist, mapblock)
 
