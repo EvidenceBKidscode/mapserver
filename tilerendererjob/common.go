@@ -37,6 +37,7 @@ func isRendered(X int, Y int) (bool) {
 	return renderedSectors[Y*MAP_SIZE+X]
 }
 
+// TODO: Change this to a "render sector" thing
 func renderMapblocks(ctx *app.App, mblist []*mapblockparser.MapBlock) int {
 	tilecount := 0
 	totalRenderedMapblocks.Add(float64(len(mblist)))
