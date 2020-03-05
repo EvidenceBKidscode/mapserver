@@ -101,7 +101,7 @@ Object.assign(L.drawLocal, {
         polygon: 'Dessiner un polygone',
         rectangle: 'Dessiner un rectangle',
         circle: 'Dessiner un cercle',
-        marker: 'Dessiner du texte',
+        marker: 'Insérer un texte',
         circlemarker: 'Dessiner un marqueur-cercle'
       }
     },
