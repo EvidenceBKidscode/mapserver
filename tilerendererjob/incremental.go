@@ -26,7 +26,10 @@ func incrementalRender(ctx *app.App) {
 	for true {
 		count, newMtime, err := ctx.MapBlockAccessor.CountModifiedBlocks(mtime)
 		if err != nil {
-			panic(err)
+			// Don't know why, get an error sometimes but conditions seem normal
+			fmt.Println(err)
+			time.Sleep(2 * time.Second)
+			continue
 		}
 		if (count == 0) {
 			time.Sleep(2 * time.Second)
