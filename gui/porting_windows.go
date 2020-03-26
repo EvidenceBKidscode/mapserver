@@ -9,5 +9,5 @@ func getUserPath() string {
 	if appdata == "" {
 		panic("Required environment variable HOME is not set")
 	}
-	return filepath.Join(appdata, "Kidscode")
+	return filepath.Join(appdata, "KidscodeIGN")
 }
