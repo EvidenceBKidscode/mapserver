@@ -3,9 +3,9 @@ package web
 import (
 	"mapserver/app"
 	"mapserver/vfs"
+	"mapserver/upnp"
 	"net/http"
 	"strconv"
-
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 )
@@ -16,6 +16,9 @@ func Serve(ctx *app.App) {
 		"webdev": ctx.Config.Webdev,
 	}
 	logrus.WithFields(fields).Info("Starting http server")
+
+	// UPNP Announce
+	upnp.Announce(ctx)
 
 	mux := http.NewServeMux()
 

@@ -13,6 +13,7 @@ require (
 	github.com/stretchr/testify v1.4.0
 	github.com/yuin/gopher-lua v0.0.0-20190206043414-8bfc7677f583
 	golang.org/x/image v0.0.0-20190118043309-183bebdce1b2 // indirect
+	golang.org/x/net v0.0.0-20181220203305-927f97764cc3
 )
 
 go 1.13
