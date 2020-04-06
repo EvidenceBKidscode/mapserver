@@ -26,6 +26,7 @@ func Serve(ctx *app.App) {
 
 	tiles := &Tiles{ctx: ctx}
 	tiles.Init()
+	mux.Handle("/upnp/", &upnp.UpnpHandler{Ctx: ctx})
 	mux.Handle("/api/tile/", tiles)
 	mux.Handle("/api/config", &ConfigHandler{ctx: ctx})
 	mux.Handle("/api/media/", &MediaHandler{ctx: ctx})
