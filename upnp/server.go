@@ -7,6 +7,7 @@ import (
 	"net"
 	"time"
 	"log"
+	"path"
 	"net/url"
 	"net/http"
 	"strings"
@@ -114,7 +115,7 @@ func (this *UpnpHandler)getXML(ip string) []byte {
 		// Kidscode specific part
 		"<kc:mapserver>" +
 			"<kc:url>http://" + ip + ":" + strconv.Itoa(this.Ctx.Config.Port) + "</kc:url>" +
-			"<kc:name>" + "" + "</kc:name>" +
+			"<kc:name>" + "Cartographe sur " + path.Base(this.Ctx.WorldDir) + "</kc:name>" +
 			"<kc:version>" + "" + "</kc:version>" +
 		"</kc:mapserver>" +
 	"</root>")
