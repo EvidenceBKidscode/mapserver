@@ -18,7 +18,7 @@ func Serve(ctx *app.App) {
 	logrus.WithFields(fields).Info("Starting http server")
 
 	// UPNP Announce
-	upnp.Announce(ctx)
+//	upnp.Announce(ctx)
 
 	mux := http.NewServeMux()
 
