@@ -134,11 +134,17 @@ func (this *UpnpServer) Start(ctx *app.App) {
 	this.HTTPConn, _ = net.Listen("tcp", "")
 	this.Port = ctx.Config.Port
 	itfs, _ := net.Interfaces()
+	maxMTU := 1<<20 // 1Mb
 
 	// Announce on all non loopback interfaces
 	for _, itf := range itfs {
 		if (itf.Flags&net.FlagLoopback == net.FlagLoopback) {
+			log.Printf("[UPNP] Skipping %s loopback interface\n", itf.Name)
 			continue;
+		}
+		if (itf.MTU > maxMTU) {
+			// Happened on windows: interface with a very large MTU leading to "makeslice: len out of range" error
+			fmt.Printf("[UPNP] Skipping %s interface MTU=%d to large\n", itf.Name, itf.MTU)
 		}
 		go func() {
 			this.serveSSDP(itf)
