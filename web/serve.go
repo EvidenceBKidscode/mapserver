@@ -73,8 +73,10 @@ func Serve(ctx *app.App) {
 		mux.ServeHTTP(w, r)
 	})
 
-	err := http.ListenAndServe(":"+strconv.Itoa(ctx.Config.Port), nil)
-	if err != nil {
+	ctx.WebServer = &http.Server{Addr: ":"+strconv.Itoa(ctx.Config.Port)}
+
+	err := ctx.WebServer.ListenAndServe()
+	if err != http.ErrServerClosed {
 		panic(err)
 	}
 }

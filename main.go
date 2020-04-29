@@ -2,11 +2,9 @@ package main
 
 import (
 	"fmt"
+	"mapserver/control"
 	"mapserver/app"
 	"mapserver/params"
-	"mapserver/tilerendererjob"
-	"mapserver/web"
-	"mapserver/mapobject"
 	"runtime"
 	"mapserver/gui"
 	"path/filepath"
@@ -78,14 +76,9 @@ func Run(p params.ParamsType) {
 	//setup app context
 	ctx := app.Setup(p, cfg, worlddir)
 
-	//Set up mapobject events
-	mapobject.Setup(ctx)
+	//control it
+	ctrl := control.New(ctx)
 
-	//run initial rendering
-	if ctx.Config.EnableRendering {
-		go tilerendererjob.Job(ctx)
-	}
-
-	//Start http server
-	web.Serve(ctx)
+	ctrl.Run()
+	ctrl.Wait()
 }

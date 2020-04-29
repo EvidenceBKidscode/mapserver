@@ -8,10 +8,9 @@ import (
 	"io/ioutil"
 	"os"
 	"mapserver/app"
+	"mapserver/control"
 	"mapserver/params"
 	"mapserver/tilerendererjob"
-	"mapserver/web"
-	"mapserver/mapobject"
 	"net/url"
 )
 
@@ -36,6 +35,8 @@ type Gui struct {
 	status_bar *widget.ProgressBar
 	status_text *widget.Label
 	link *widget.Hyperlink
+	ctx *app.App
+	ctrl *control.Control
 }
 
 func (self *Gui) startMapServer() {
@@ -46,24 +47,19 @@ func (self *Gui) startMapServer() {
 	}
 
 	//setup app context
-	ctx := app.Setup(self.params, cfg, self.worldpath)
+	self.ctx = app.Setup(self.params, cfg, self.worldpath)
 
-	//Set up mapobject events
-	mapobject.Setup(ctx)
+	//control app
+	self.ctrl = control.New(self.ctx)
 
-	//run initial rendering
-	if ctx.Config.EnableRendering {
-		go tilerendererjob.Job(ctx)
-	}
+	// Listend app web event bus
+	self.ctx.WebEventbus.AddListener(self)
+
+	// Run mapserver!
+	self.ctrl.Run()
 
 	self.status_text.SetText("Cartographe lancé.")
 	self.link.Show()
-
-	// Listend app web event bus
-	ctx.WebEventbus.AddListener(self)
-
-	//Start http server
-	web.Serve(ctx)
 }
 
 func (self *Gui) Run(p params.ParamsType) {
@@ -85,6 +81,9 @@ func (self *Gui) Run(p params.ParamsType) {
 		self.status_bar,
 		self.link,
 		widget.NewButton("Quitter", func() { self.app.Quit() }),
+		widget.NewButton("Stopper", func() {
+			self.ctrl.Stop()
+		}),
 	))
 	self.window.Show()
 
@@ -149,7 +148,6 @@ func (self *Gui) Run(p params.ParamsType) {
 
 	self.app.Run()
 }
-
 
 func (self *Gui) OnEvent(eventtype string, ev interface{}) {
 	switch eventtype {

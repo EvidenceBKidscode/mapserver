@@ -15,7 +15,9 @@ import (
 	"mapserver/geometry"
 
 	"path/filepath"
+	"net/http"
 )
+
 
 type App struct {
 	Params      params.ParamsType
@@ -38,6 +40,7 @@ type App struct {
 	MediaRepo map[string][]byte
 
 	WebEventbus *eventbus.Eventbus
+	WebServer *http.Server
 }
 
 func (ctx *App) GetWorldPath(filename string) string {

@@ -12,11 +12,11 @@ type InitialRenderEvent struct {
 	Progress float64 `json:"progress"`
 }
 
-func initialRender(ctx *app.App) {
+func initialRender(ctx *app.App, goon *bool) {
 	logrus.Info("Starting initial rendering job")
 	ctx.WebEventbus.Emit("initial-render-progress", &InitialRenderEvent{Progress: 0})
 
-	for true {
+	for *goon {
 		start := time.Now()
 
 		result, err := ctx.MapBlockAccessor.FindNextLegacyBlocks(ctx.Settings, ctx.Config.Layers, ctx.Config.InitialFetchLimit)

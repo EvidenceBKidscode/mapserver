@@ -5,7 +5,7 @@ import (
 	"mapserver/settings"
 )
 
-func Job(ctx *app.App) {
+func Job(ctx *app.App, goon *bool) {
 	lastMtime := ctx.Settings.GetInt64(settings.SETTING_LAST_MTIME, 0)
 	if lastMtime == 0 {
 		//mark db time as last incremental render point
@@ -20,12 +20,13 @@ func Job(ctx *app.App) {
 
 	if ctx.Config.EnableInitialRendering {
 		if ctx.Settings.GetBool(settings.SETTING_INITIAL_RUN, true) {
-			initialRender(ctx)
+			initialRender(ctx, goon)
 		}
 	}
 
-	incrementalRender(ctx)
+	incrementalRender(ctx, goon)
 
-	panic("render job interrupted!")
-
+	if *goon {
+		panic("render job interrupted!")
+	}
 }

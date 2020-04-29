@@ -14,7 +14,7 @@ type IncrementalRenderEvent struct {
 	Progress float64 `json:"progress"`
 }
 
-func incrementalRender(ctx *app.App) {
+func incrementalRender(ctx *app.App, goon *bool) {
 	// Lastpos is not stored. In case of crash, blocks will be processed again
 	mtime := ctx.Settings.GetInt64(settings.SETTING_LAST_MTIME, 0) + 1
 
@@ -23,7 +23,7 @@ func incrementalRender(ctx *app.App) {
 	}
 	logrus.WithFields(fields).Info("Starting incremental rendering job")
 
-	for true {
+	for *goon {
 		count, newMtime, err := ctx.MapBlockAccessor.CountModifiedBlocks(mtime)
 		if err != nil {
 			// Don't know why, get an error sometimes but conditions seem normal
