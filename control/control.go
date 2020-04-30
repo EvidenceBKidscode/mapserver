@@ -5,8 +5,8 @@ import (
 	"mapserver/mapobject"
 	"mapserver/tilerendererjob"
 	"mapserver/web"
+	"mapserver/eventbus"
 	"context"
-	"fmt"
 	"sync"
 )
 
@@ -21,24 +21,13 @@ const(
 	PIECE_RENDERINGJOB
 )
 
-func getStatusString(status int) string {
-	switch status {
-	case STATUS_RUNNING:
-		return "running"
-	case STATUS_STOPPING:
-		return "stopping"
-	case STATUS_STOPPED:
-		return "stopped"
-	}
-	return "unknown"
-}
-
-
 type Control struct {
 	ctx *app.App
 	renderingJobStatus int
 	webServerStatus int
 	run_job bool
+
+	EventBus *eventbus.Eventbus
 
 	renderingJobWaitGroup sync.WaitGroup
 	webServerWaitGroup sync.WaitGroup
@@ -50,6 +39,7 @@ func New(ctx *app.App) *Control {
 	c.renderingJobStatus = STATUS_STOPPED
 	c.webServerStatus = STATUS_STOPPED
 	c.run_job = false
+	c.EventBus = eventbus.New()
 
 	return &c
 }
@@ -57,11 +47,11 @@ func New(ctx *app.App) *Control {
 func (self *Control) SetStatus(piece int, status int) {
 	if piece == PIECE_RENDERINGJOB && self.renderingJobStatus != status {
 		self.renderingJobStatus = status
-		fmt.Printf("Rendering job %s\n", getStatusString(status))
+		self.EventBus.Emit("rendering-job-status-changed", status)
 	}
 	if piece == PIECE_WEBSERVER && self.webServerStatus != status {
 		self.webServerStatus = status
-		fmt.Printf("Web server %s\n", getStatusString(status))
+		self.EventBus.Emit("web-server-status-changed", status)
 	}
 }
 
