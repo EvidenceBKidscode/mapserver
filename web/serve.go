@@ -55,27 +55,12 @@ func Serve(ctx *app.App) {
 
 	mux.Handle("/api/draw/", &Draw{ctx: ctx})
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		uri := r.RequestURI
-
-		if len(uri) >= 3 {
-			suffix := uri[len(uri)-3:]
-
-			switch suffix {
-			case "css":
-				w.Header().Set("Content-Type", "text/css")
-			case ".js":
-				w.Header().Set("Content-Type", "application/javascript")
-			case "png":
-				w.Header().Set("Content-Type", "image/png")
-			}
-		}
-		mux.ServeHTTP(w, r)
-	})
-
-	ctx.WebServer = &http.Server{Addr: ":"+strconv.Itoa(ctx.Config.Port)}
+	ctx.WebServer = &http.Server{
+		Addr: ":"+strconv.Itoa(ctx.Config.Port),
+		Handler:mux}
 
 	err := ctx.WebServer.ListenAndServe()
+
 	if err != http.ErrServerClosed {
 		panic(err)
 	}
