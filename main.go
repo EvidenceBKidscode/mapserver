@@ -6,7 +6,7 @@ import (
 	"mapserver/app"
 	"mapserver/params"
 	"runtime"
-	"mapserver/gui"
+//	"mapserver/gui"
 	"path/filepath"
 	"github.com/sirupsen/logrus"
 )
@@ -39,13 +39,12 @@ func main() {
 		return
 	}
 
-	if p.NoGui {
+//	if p.NoGui {
 		Run(p)
-	} else {
-		// gui.Run(p) would be better
-		g := gui.Gui{}
-		g.Run(p)
-	}
+//	} else {
+//		g := gui.Gui{}
+//		g.Run(p)
+//	}
 }
 
 func Run(p params.ParamsType) {
