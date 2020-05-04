@@ -42,7 +42,7 @@ func incrementalRender(ctx *app.App, goon *bool) {
 		done := 0
 		pos := coords.NewMapBlockCoords(coords.MinCoord, coords.MinCoord, coords.MinCoord)
 
-		for true {
+		for *goon {
 			start := time.Now()
 			result, err := ctx.MapBlockAccessor.FindModifiedBlocks(mtime, pos, ctx.Config.IncrementalFetchLimit, ctx.Config.Layers)
 
