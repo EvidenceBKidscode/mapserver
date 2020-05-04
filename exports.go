@@ -4,8 +4,10 @@ package main
 // go build -o mapserver.a -buildmode=c-archive
 
 /*
-typedef void (*EventCallbackType)(int i);
-void callCallback(EventCallbackType callback, int value);
+#include <stdlib.h>
+
+typedef void (*EventCallbackType)(int);
+void callCallback(EventCallbackType callback, int);
 */
 import "C"
 
@@ -16,7 +18,7 @@ import (
 	"path/filepath"
 )
 
-type EventCallbackType func(C.int)
+type EventCallbackType func(int)
 
 type ControlListener struct {}
 
@@ -24,6 +26,9 @@ var the_app *app.App
 var the_control *control.Control
 var listeners []C.EventCallbackType
 var control_listener = ControlListener{}
+
+var mapstatus = "starting"
+var mapprogress = 0
 
 //export MapserverRun
 func MapserverRun(worldpath string) {
@@ -65,16 +70,43 @@ func MapserverStatus() int {
 	}
 }
 
+//export MapserverMapStatus
+func MapserverMapStatus() int {
+	if the_control == nil {
+		return control.MAP_NOTREADY
+	} else {
+		return the_control.MapStatus()
+	}
+}
+
+//export MapserverMapProgress
+func MapserverMapProgress() float64 {
+	if the_control == nil {
+		return 0
+	} else {
+		return the_control.MapProgress()
+	}
+}
+
 //export MapserverListen
 func MapserverListen(l C.EventCallbackType) {
 	listeners = append(listeners, l)
 }
 
+// Would have been much better to send an event name but wasn't able to do it.
+// when passing C.char* C.CString(xxx) gives a 32 bits truncated pointer on
+// C side provoking a SEGFAULT when used.
+func emit(eventtype int) {
+	for _, l := range listeners {
+		C.callCallback(l, C.int(eventtype))
+	}
+}
+
 func (self *ControlListener) OnEvent(eventtype string, o interface{}) {
-	if eventtype == "rendering-job-status-changed" ||
-			eventtype == "web-server-status-changed" {
-		for _, l := range listeners {
-			C.callCallback(l, C.int(MapserverStatus()))
-		}
+	if eventtype == "app-status-changed" {
+		emit(1)
+	}
+	if eventtype ==  "map-status-changed" {
+		emit(2)
 	}
 }

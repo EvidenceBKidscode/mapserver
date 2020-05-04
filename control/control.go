@@ -17,6 +17,13 @@ const(
 )
 
 const(
+	MAP_NOTREADY = iota
+	MAP_INITIAL
+	MAP_INCREMENTAL
+	MAP_READY
+)
+
+const(
 	PIECE_WEBSERVER = iota
 	PIECE_RENDERINGJOB
 )
@@ -25,6 +32,9 @@ type Control struct {
 	ctx *app.App
 	renderingJobStatus int
 	webServerStatus int
+	appStatus int
+	mapStatus int
+	mapProgress float64
 	run_job bool
 
 	EventBus *eventbus.Eventbus
@@ -38,8 +48,13 @@ func New(ctx *app.App) *Control {
 	c.ctx = ctx
 	c.renderingJobStatus = STATUS_STOPPED
 	c.webServerStatus = STATUS_STOPPED
+	c.appStatus = STATUS_STOPPED
+	c.mapStatus = MAP_NOTREADY
+	c.mapProgress = 0
 	c.run_job = false
 	c.EventBus = eventbus.New()
+
+	ctx.WebEventbus.AddListener(&c)
 
 	return &c
 }
@@ -52,6 +67,18 @@ func (self *Control) SetStatus(piece int, status int) {
 	if piece == PIECE_WEBSERVER && self.webServerStatus != status {
 		self.webServerStatus = status
 		self.EventBus.Emit("web-server-status-changed", status)
+	}
+
+	var newStatus int
+	if self.renderingJobStatus < self.webServerStatus {
+		newStatus = self.renderingJobStatus
+	} else {
+		newStatus = self.webServerStatus
+	}
+
+	if newStatus != self.appStatus {
+		self.appStatus = newStatus
+		self.EventBus.Emit("app-status-changed", 0)
 	}
 }
 
@@ -108,9 +135,47 @@ func (self *Control) Wait() {
 }
 
 func (self *Control) Status() int {
-	if self.renderingJobStatus < self.webServerStatus {
-		return self.renderingJobStatus
-	} else {
-		return self.webServerStatus
+	return self.appStatus
+}
+
+func (self *Control) MapStatus() int {
+	return self.mapStatus
+}
+
+func (self *Control) MapProgress() float64 {
+	return self.mapProgress
+}
+
+// Listen WebEventBus to make Control.EventBus events
+func (self *Control) OnEvent(eventtype string, o interface{}) {
+	mapStatus := self.mapStatus
+	mapProgress := self.mapProgress
+
+	if eventtype == "initial-render-progress" {
+		ev := o.(*tilerendererjob.InitialRenderEvent)
+		if ev.Progress < 1 {
+			mapStatus = MAP_INITIAL
+			mapProgress = ev.Progress
+		} else {
+			mapStatus = MAP_READY
+			mapProgress = 1
+		}
+	}
+
+	if eventtype == "incremental-render-progress" {
+		ev := o.(*tilerendererjob.IncrementalRenderEvent)
+		if ev.Progress < 1 {
+			mapStatus = MAP_INCREMENTAL
+			mapProgress = ev.Progress
+		} else {
+			mapStatus = MAP_READY
+			mapProgress = 1
+		}
+	}
+
+	if mapStatus != self.mapStatus || mapProgress != self.mapProgress {
+		self.mapStatus = mapStatus
+		self.mapProgress = mapProgress
+		self.EventBus.Emit("map-status-changed", 0)
 	}
 }
