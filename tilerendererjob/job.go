@@ -21,10 +21,14 @@ func Job(ctx *app.App, goon *bool) {
 	if ctx.Config.EnableInitialRendering {
 		if ctx.Settings.GetBool(settings.SETTING_INITIAL_RUN, true) {
 			initialRender(ctx, goon)
+		} else {
+			ctx.WebEventbus.Emit("initial-render-progress", &InitialRenderEvent{Progress: 1})
 		}
 	}
 
-	incrementalRender(ctx, goon)
+	if *goon {
+		incrementalRender(ctx, goon)
+	}
 
 	if *goon {
 		panic("render job interrupted!")
