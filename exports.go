@@ -31,11 +31,13 @@ var mapstatus = "starting"
 var mapprogress = 0
 
 //export MapserverRun
-func MapserverRun(worldpath string) {
+func MapserverRun(cworldpath *C.char) {
 
 	if MapserverStatus() != control.STATUS_STOPPED {
 		return
 	}
+
+	worldpath := C.GoString(cworldpath)
 
 	//parse Config
 	cfg, err := app.ParseConfig(filepath.Join(worldpath, "mapserver.json"))
