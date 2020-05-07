@@ -24,8 +24,8 @@ export function createMap(node, layerId, zoom, lat, lon){
     crs: SimpleCRS
   });
 
-  map.attributionControl.addAttribution('<a href="https://github.com/minetest-tools/mapserver">Minetest Mapserver</a>');
-
+  //map.attributionControl.addAttribution('<a href="https://github.com/minetest-tools/mapserver">Minetest Mapserver</a>');
+  map.attributionControl.remove()
   // Quick and dirty image layers ~~> Shoud go into a separate file
   // Supose upperleft and lowerright corners are elements 3 and 1 of given coordinates
   if (cfg.rasteroverlays != null) {
@@ -52,14 +52,15 @@ export function createMap(node, layerId, zoom, lat, lon){
 
   new CoordinatesDisplay({ position: 'bottomleft' }).addTo(map);
   new WorldInfoDisplay(wsChannel, { position: 'bottomright' }).addTo(map);
+
+  // Mapserver status
+  new MapServerStatus(wsChannel, { position: 'topright' }).addTo(map);
+
   new TopRightControl({ position: 'topright' }).addTo(map);
   new SnapShotControl({ position: 'topright' }).addTo(map);
 
   // Layer Control
   L.control.layers({}, GetLocalizedOverlays(overlays), { position: "topright" }).addTo(map);
-
-  // Mapserver status
-  new MapServerStatus(wsChannel, { position: 'bottomright' }).addTo(map);
 
   return map;
 }

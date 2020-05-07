@@ -62,17 +62,22 @@ body {
   height: 44px;
   }
 
-.serverstatus p {
-	margin-bottom:0.2em;
-	text-align:center;
+.serverstatus {
+  padding: 0px 8px 6px 8px;
 }
+
+.serverstatus p {
+  margin-bottom:0.2em;
+  text-align:center;
+}
+
 .serverstatus-bar {
-	width: 200px;
-	height: 10px;
-	background-color:#CCF;
+  width: 144px;
+  height: 10px;
+  background-color:#CCF;
 }
 
 .serverstatus-progress {
-	height: 10px;
-	background-color:#88F;
+  height: 10px;
+  background-color:#88F;
 }
