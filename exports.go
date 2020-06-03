@@ -116,10 +116,18 @@ func (self *ControlListener) OnEvent(eventtype string, o interface{}) {
 
 //export MapserverGetPort
 func MapserverGetPort() int {
-	return the_app.Config.Port
+	if the_control == nil {
+		return -1
+	} else {
+		return the_control.GetApp().Config.Port
+	}
 }
 
 //export MapserverGetWorldDir
-func MapserverGetWorldDir() string {
-	return the_app.WorldDir
+func MapserverGetWorldDir() *C.char {
+	if the_control == nil {
+		return C.CString("")
+	} else {
+		return C.CString(the_control.GetApp().WorldDir)
+	}
 }

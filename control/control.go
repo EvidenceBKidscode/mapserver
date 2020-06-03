@@ -43,6 +43,10 @@ type Control struct {
 	webServerWaitGroup sync.WaitGroup
 }
 
+func (self *Control) GetApp() *app.App {
+	return self.ctx
+}
+
 func New(ctx *app.App) *Control {
 	c := Control{}
 	c.ctx = ctx
