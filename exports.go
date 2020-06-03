@@ -112,3 +112,14 @@ func (self *ControlListener) OnEvent(eventtype string, o interface{}) {
 		emit(2)
 	}
 }
+
+
+//export MapserverGetPort
+func MapserverGetPort() int {
+	return the_app.Config.Port
+}
+
+//export MapserverGetWorldDir
+func MapserverGetWorldDir() string {
+	return the_app.WorldDir
+}
