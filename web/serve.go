@@ -3,7 +3,6 @@ package web
 import (
 	"mapserver/app"
 	"mapserver/vfs"
-	"mapserver/upnp"
 	"net/http"
 	"strconv"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -17,16 +16,12 @@ func Serve(ctx *app.App) {
 	}
 	logrus.WithFields(fields).Info("Starting http server")
 
-	// UPNP Announce
-//	upnp.Announce(ctx)
-
 	mux := http.NewServeMux()
 
 	mux.Handle("/", http.FileServer(vfs.FS(ctx.Config.Webdev)))
 
 	tiles := &Tiles{ctx: ctx}
 	tiles.Init()
-	mux.Handle("/upnp/", &upnp.UpnpHandler{Ctx: ctx})
 	mux.Handle("/api/tile/", tiles)
 	mux.Handle("/api/config", &ConfigHandler{ctx: ctx})
 	mux.Handle("/api/media/", &MediaHandler{ctx: ctx})
