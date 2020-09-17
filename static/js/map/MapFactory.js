@@ -28,7 +28,7 @@ export function createMap(node, layerId, zoom, lat, lon){
   map.attributionControl.remove()
   // Quick and dirty image layers ~~> Shoud go into a separate file
   // Supose upperleft and lowerright corners are elements 3 and 1 of given coordinates
-  if (cfg.rasteroverlays != null) {
+  if (cfg.rasteroverlays && cfg.geometry) {
     var bounds = [cfg.geometry.coordinatesGame[3], cfg.geometry.coordinatesGame[1]];
     var labels = {}
     cfg.rasteroverlays.forEach(overlay => {
