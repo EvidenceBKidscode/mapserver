@@ -7,5 +7,5 @@ type Geometry struct {
 	CoordinatesGeo   [4][2]float32 `json:"coordinatesGeo"`
 	CoordinatesGame  [4][2]float32 `json:"coordinatesGame"`
 	Echelle          float32       `json:"echelle"`
-	AltitudeZero     int           `json:"altitudeZero"`
+	AltitudeZero     float32       `json:"altitudeZero"`
 }
